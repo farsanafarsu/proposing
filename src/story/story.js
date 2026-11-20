@@ -137,7 +137,9 @@ export class Story {
       trigger: '#track',
       start: 'top top',
       end: 'bottom bottom',
-      scrub: w.isMobile ? 0.9 : 1.4,
+      // desktop: Lenis already smooths, so follow it directly (no second, laggy ease)
+      // touch: a short scrub turns native scroll steps into a glide
+      scrub: w.isMobile ? 0.35 : true,
       animation: tl,
       onUpdate: (self) => this.onProgress?.(self.progress),
     });

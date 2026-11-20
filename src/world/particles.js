@@ -169,6 +169,7 @@ export class Motes {
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     });
+    this.baseSize = size;
     this.points = new THREE.Points(geo, this.material);
     this.points.position.copy(center);
     this.points.frustumCulled = false;

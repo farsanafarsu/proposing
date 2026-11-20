@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import gsap from 'gsap';
 import { createMaterials } from './materials.js';
 import { setMaxAnisotropy } from './textures.js';
 import { createEntrance } from './entrance.js';
@@ -43,6 +44,10 @@ export class World {
     this.pointerSmooth = new THREE.Vector2();
     this.clock = new THREE.Clock(false);
     this.updaters = [];
+    this._sway = new THREE.Vector3();
+    this._right = new THREE.Vector3();
+    this._op = new THREE.Vector3();
+    this._look = new THREE.Vector3();
   }
 
   async build(onProgress = () => {}) {
@@ -58,7 +63,7 @@ export class World {
       powerPreference: 'high-performance',
       stencil: false,
     });
-    this.maxPixelRatio = Math.min(window.devicePixelRatio, this.isTiny ? 1.25 : this.isMobile ? 1.5 : 1.75);
+    this.maxPixelRatio = Math.min(window.devicePixelRatio, this.isTiny ? 1.25 : this.isMobile ? 1.5 : 1.5);
     this.pixelRatio = this.maxPixelRatio;
     this.perf = { frames: 0, time: 0, settled: false };
     renderer.setPixelRatio(this.pixelRatio);
@@ -111,8 +116,8 @@ export class World {
 
     /* post-processing */
     const { composer, bloom, grade } = createComposer(renderer, scene, camera, {
-      samples: this.isMobile ? 0 : 4,
-      bloomScale: this.isMobile ? 0.5 : 1,
+      samples: this.isMobile ? 0 : 2,
+      bloomScale: 0.5, // bloom is a soft blur — half resolution looks identical and costs a quarter
     });
     this.composer = composer;
     this.bloom = bloom;
@@ -223,7 +228,7 @@ export class World {
     L.hero.position.set(0.25, ROOM.height - 0.25, HERO.z + 1.1);
     L.hero.target.position.set(0, TABLE_TOP, HERO.z);
     L.hero.castShadow = true;
-    L.hero.shadow.mapSize.set(isMobile ? 1024 : 2048, isMobile ? 1024 : 2048);
+    L.hero.shadow.mapSize.set(isMobile ? 1024 : 1536, isMobile ? 1024 : 1536);
     L.hero.shadow.bias = -0.0002;
     L.hero.shadow.normalBias = 0.01;
     L.hero.shadow.camera.near = 1;
@@ -344,6 +349,9 @@ export class World {
       this.composer.setPixelRatio(this.pixelRatio);
       this.composer.setSize(w, h);
       this.grade.uniforms.uAspect.value = w / h;
+      // keep gold dust the same size relative to the screen on every device
+      const k = (h * this.pixelRatio) / 900;
+      for (const m of [this.letterMotes, this.ringMotes]) m.material.uniforms.uSize.value = m.baseSize * k;
     }
   }
 
@@ -370,6 +378,7 @@ export class World {
     L.moon.intensity = lerp(0.25, 0.0, Math.max(m, c));
     L.hero.intensity = lerp(9, 1.2, k) + c * 3;
     L.ring.intensity = 5 * m;
+    L.ring.shadow.autoUpdate = m > 0.01; // no shadow pass while the ring spotlight is off
     this.mats.bulb.color.copy(this.bulbBase).multiplyScalar(lerp(1, 0.35, k));
     for (const ch of this.restaurant.chandeliers) ch.userData.halos.children.forEach((h) => (h.material.opacity = lerp(0.28, 0.1, k)));
     this.scene.environmentIntensity = lerp(0.55, 0.3, k);
@@ -387,19 +396,19 @@ export class World {
     const ps = this.pointerSmooth.lerp(this.pointer, 0.04);
     const close = THREE.MathUtils.clamp(rig.pos.distanceTo(rig.target) / 3, 0.12, 1);
     const amp = this.reducedMotion ? 0 : 1;
-    const sway = new THREE.Vector3(Math.sin(time * 0.31) * 0.012, Math.sin(time * 0.47) * 0.008, 0).multiplyScalar(close * amp);
+    const sway = this._sway.set(Math.sin(time * 0.31) * 0.012, Math.sin(time * 0.47) * 0.008, 0).multiplyScalar(close * amp);
 
     camera.position.copy(rig.pos).add(sway);
-    const right = new THREE.Vector3().subVectors(rig.target, rig.pos).cross(camera.up).normalize();
+    const right = this._right.subVectors(rig.target, rig.pos).cross(camera.up).normalize();
     camera.position.addScaledVector(right, ps.x * 0.06 * close * amp);
     camera.position.y += -ps.y * 0.035 * close * amp;
 
     if (orbit.weight > 0) {
       const center = this.hero.ringBox.diamondWorld;
       const a = orbit.angle;
-      const op = new THREE.Vector3(center.x + Math.sin(a) * orbit.radius, center.y + orbit.height, center.z + Math.cos(a) * orbit.radius);
+      const op = this._op.set(center.x + Math.sin(a) * orbit.radius, center.y + orbit.height, center.z + Math.cos(a) * orbit.radius);
       camera.position.lerp(op, orbit.weight);
-      const t = new THREE.Vector3().lerpVectors(rig.target, center, orbit.weight);
+      const t = this._look.lerpVectors(rig.target, center, orbit.weight);
       camera.lookAt(t);
     } else {
       camera.lookAt(rig.target);
@@ -415,7 +424,8 @@ export class World {
 
   start() {
     this.clock.start();
-    this.renderer.setAnimationLoop(() => this.frame());
+    // render on GSAP's ticker, after Lenis and ScrollTrigger have updated in the same frame
+    gsap.ticker.add(() => this.frame());
   }
 
   onUpdate(fn) {

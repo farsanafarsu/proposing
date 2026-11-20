@@ -42,7 +42,8 @@ function splitChars(el) {
 }
 
 /* -------------------------------------------------------------- smooth scroll */
-const lenis = new Lenis({ lerp: 0.08, wheelMultiplier: 0.8, smoothWheel: true });
+// Lenis is the only smoothing layer for wheel/trackpad; touch keeps native momentum scrolling
+const lenis = new Lenis({ lerp: 0.1, wheelMultiplier: 0.9, smoothWheel: true, syncTouch: false });
 lenis.stop();
 lenis.on('scroll', ScrollTrigger.update);
 gsap.ticker.add((t) => lenis.raf(t * 1000));

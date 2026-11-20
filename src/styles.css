@@ -948,15 +948,22 @@ body.is-entered .sound {
     display: none;
   }
   .sound {
-    width: 30px;
-    height: 30px;
-    right: calc(50% - 15px);
-    bottom: 4%;
+    width: 28px;
+    height: 28px;
+    right: calc(50% - 14px);
+    top: 3%;
+    bottom: auto;
   }
   .sound__bars {
     height: 9px;
     gap: 2px;
   }
+}
+
+/* the scroll hint is a small label everywhere — keep it out of the caption size ramps */
+.captions .caption--hint {
+  font-size: 10px;
+  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
 }
 
 @media (prefers-reduced-motion: reduce) {
