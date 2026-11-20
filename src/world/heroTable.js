@@ -17,11 +17,13 @@ export function createHeroTable(mats) {
   root.add(createTable(mats, { radius: 0.9, runner: true }));
 
   const glasses = [];
+  const chairs = [];
   for (const s of [-1, 1]) {
     const chair = createChair(mats);
     chair.position.set(s * 1.0, 0, 0);
     chair.rotation.y = -s * Math.PI / 2;
     root.add(chair);
+    chairs.push(chair);
 
     const seat = new THREE.Group();
     seat.position.set(s * 0.52, TABLE_TOP, 0);
@@ -75,6 +77,7 @@ export function createHeroTable(mats) {
   return {
     root,
     glasses,
+    chairs, // [left (−x), right (+x)]
     vase,
     candle,
     candle2,

@@ -5,6 +5,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
 import { World } from './world/World.js';
 import { Story, SHOTS } from './story/story.js';
+import { AfterYes } from './story/afterYes.js';
 import { Ambience } from './ui/audio.js';
 import { Fireworks } from './ui/fireworks.js';
 import { initCursor } from './ui/cursor.js';
@@ -198,13 +199,78 @@ soundBtn.addEventListener('click', () => {
 let celebrating = false;
 const finaleChars = splitChars($('.finale__title'));
 
-document.querySelectorAll('[data-yes]').forEach((btn) =>
-  btn.addEventListener('click', () => {
-    if (celebrating) return;
-    celebrating = true;
-    celebrate();
-  })
-);
+function sayYes() {
+  if (celebrating) return;
+  celebrating = true;
+  celebrate();
+}
+document.querySelectorAll('[data-yes]').forEach((btn) => btn.addEventListener('click', sayYes));
+
+/* -------------------------------------------------------------- the "No" button
+   Every "no" earns a heartfelt plea; YES grows, NO shrinks — until NO becomes YES. */
+const PLEAS = [
+  'Are you sure? My heart just skipped a beat...',
+  'Every love story is beautiful, but ours is my favourite.',
+  'I would choose you in a hundred lifetimes, in a hundred worlds.',
+  'Think of every sunrise we have not watched together yet...',
+  'Even the candles are holding their breath for your answer.',
+  'Without you, forever would just be a very long time.',
+];
+const noBtn = $('#no');
+const yesBtn = $('.proposal__actions [data-yes]');
+const subEl = $('.proposal__sub');
+const subText = subEl.textContent;
+let noCount = 0;
+
+noBtn.addEventListener('click', () => {
+  if (noBtn.dataset.turned) return sayYes();
+  const plea = PLEAS[noCount % PLEAS.length];
+  noCount++;
+  gsap
+    .timeline()
+    .to(subEl, { autoAlpha: 0, y: -8, duration: 0.25, ease: 'power2.in' })
+    .add(() => (subEl.textContent = plea))
+    .to(subEl, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power2.out' });
+  gsap.to(yesBtn, { scale: 1 + Math.min(noCount, 6) * 0.08, duration: 0.6, ease: 'elastic.out(1, 0.5)' });
+  gsap.fromTo(yesBtn, { boxShadow: '0 0 0 0 rgba(230,199,147,0.7)' }, { boxShadow: '0 0 60px 14px rgba(230,199,147,0)', duration: 1.2 });
+  gsap.to(noBtn, { scale: Math.max(0.55, 1 - noCount * 0.08), opacity: Math.max(0.5, 1 - noCount * 0.09), duration: 0.5, ease: 'power2.out' });
+  gsap.fromTo(noBtn, { x: -6 }, { x: 0, duration: 0.5, ease: 'elastic.out(1, 0.3)' });
+  if (noCount >= PLEAS.length) {
+    // the No button gives in
+    noBtn.dataset.turned = '1';
+    const label = noBtn.querySelector('span');
+    gsap
+      .timeline({ delay: 0.4 })
+      .to(noBtn, { rotateX: 90, duration: 0.25, ease: 'power2.in' })
+      .add(() => {
+        label.textContent = 'Okay... YES ❤️';
+        noBtn.classList.add('btn-gold--solid');
+      })
+      .to(noBtn, { rotateX: 0, scale: 1, opacity: 1, duration: 0.45, ease: 'back.out(2)' });
+  }
+});
+
+function resetNo() {
+  noCount = 0;
+  delete noBtn.dataset.turned;
+  noBtn.classList.remove('btn-gold--solid');
+  noBtn.querySelector('span').textContent = 'No';
+  subEl.textContent = subText;
+  gsap.set([noBtn, yesBtn, subEl], { clearProps: 'transform,opacity,visibility,boxShadow' });
+}
+
+/* -------------------------------------------------------------- after the yes: take your seat */
+const afterYes = new AfterYes(world, { onEnter: () => fireworks.stop() });
+
+function openEpilogue() {
+  // reveal the extra scroll track and let the visitor scroll on
+  story.trigger.disable(false); // freeze the proposal timeline where it is
+  body.classList.add('is-after');
+  lenis.resize();
+  ScrollTrigger.refresh();
+  afterYes.build();
+  lenis.start();
+}
 
 function celebrate() {
   $('#proposal').classList.remove('is-interactive');
@@ -234,19 +300,33 @@ function celebrate() {
     .from('#finale .eyebrow', { autoAlpha: 0, y: 12, duration: 1.4, ease: 'power3.out' }, 1.6)
     .from(finaleChars, { autoAlpha: 0, y: 40, scale: 0.8, filter: 'blur(10px)', duration: 1.6, stagger: 0.04, ease: 'power3.out' }, 1.9)
     .from('.finale__flourish path', { autoAlpha: 0, scaleX: 0, transformOrigin: '50% 50%', duration: 1.6, ease: 'power3.out', stagger: 0.2 }, 3)
-    .from('#replay', { autoAlpha: 0, y: 10, duration: 1 }, 4.2);
+    .from('.finale__cue', { autoAlpha: 0, y: 10, duration: 1 }, 4.2)
+    .add(openEpilogue, 6.4); // after the orbit has settled
 }
 
 $('#replay').addEventListener('click', () => {
   fireworks.stop();
+  lenis.stop();
   const tl = gsap.timeline({
     onComplete: () => {
       celebrating = false;
       gsap.set('#proposal', { y: 0 });
-      gsap.set(['#finale .eyebrow', finaleChars, '.finale__flourish path', '#replay'], { clearProps: 'all' });
+      gsap.set(['#finale .eyebrow', finaleChars, '.finale__flourish path', '.finale__cue'], { clearProps: 'all' });
+      resetNo();
     },
   });
-  tl.to('#finale', { autoAlpha: 0, duration: 1.2, ease: 'power2.inOut' })
+  tl.to(['#finale', '#ending'], { autoAlpha: 0, duration: 1.2, ease: 'power2.inOut' })
+    // dip to black while the camera is handed back to the story
+    .to(world.state, { fade: 1, duration: 1.1, ease: 'power2.in' }, 0)
+    .to(world.state, { fade: 0, duration: 1.6, ease: 'power2.out' }, 1.7)
+    .add(() => {
+      // put the chair back, drop the epilogue track and hand the camera back to the story
+      afterYes.reset();
+      body.classList.remove('is-after');
+      lenis.resize();
+      story.trigger.enable(false);
+      ScrollTrigger.refresh();
+    }, 1.2)
     .to(world.orbit, { weight: 0, duration: 2.5, ease: 'power2.inOut' }, 0)
     .to(world.state, { celebrate: 0, duration: 2.5 }, 0)
     .to(world.hero.ringBox.sparkles, { intensity: 1, duration: 2 }, 0)

@@ -71,10 +71,10 @@
     <section id="proposal" class="proposal" aria-label="The Proposal">
       <h2 class="proposal__title">Will You Marry Me?</h2>
       <div class="proposal__bottom">
-        <p class="proposal__sub">Today, tomorrow, and every lifetime after... I choose you.</p>
+        <p class="proposal__sub" aria-live="polite">Today, tomorrow, and every lifetime after... I choose you.</p>
         <div class="proposal__actions">
           <button class="btn-gold btn-gold--solid" type="button" data-yes data-cursor><span>YES, FOREVER ❤️</span></button>
-          <button class="btn-gold" type="button" data-yes data-cursor><span>Let me say YES!</span></button>
+          <button id="no" class="btn-gold btn-gold--no" type="button" data-cursor><span>No</span></button>
         </div>
       </div>
     </section>
@@ -87,11 +87,19 @@
         <path d="M2 12 H96 M144 12 H238" />
         <path d="M120 22 C120 22 104 13 104 7 A6 6 0 0 1 120 5 A6 6 0 0 1 136 7 C136 13 120 22 120 22 Z" />
       </svg>
+      <p class="finale__cue"><span>Scroll — take your seat</span><i class="hint-line"></i></p>
+    </section>
+
+    <!-- After the yes: a seat at the table -->
+    <section id="ending" class="ending" aria-label="Take your seat">
+      <h2 class="ending__title">Come, sit with me.</h2>
+      <p class="ending__sub">Tonight, and every night after.</p>
       <button id="replay" class="link-gold" type="button" data-cursor>Relive our story</button>
     </section>
 
     <!-- Tall scroll track that drives the camera -->
     <main id="track" class="track" aria-hidden="true"></main>
+    <div id="afterTrack" class="after-track" aria-hidden="true"></div>
 
     <noscript><p class="noscript">This love story needs JavaScript and WebGL to unfold.</p></noscript>
     <script type="module" src="/src/main.js"></script>
