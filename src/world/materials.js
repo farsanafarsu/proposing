@@ -200,7 +200,7 @@ export function createMaterials() {
     petal: new THREE.MeshPhysicalMaterial({
       map: petalTexture(),
       emissive: new THREE.Color(0x4a0614), // a whisper of glow so petals read against the dark
-      emissiveIntensity: 0.6,
+      emissiveIntensity: 0.25,
       roughness: 0.6,
       sheen: 1,
       sheenRoughness: 0.35,
@@ -221,7 +221,7 @@ export function createMaterials() {
       flatShading: true,
     }),
     mirror: new THREE.MeshStandardMaterial({ color: 0x2a1a16, metalness: 1, roughness: 0.08, envMapIntensity: 1.2 }),
-    doorLight: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.0, 0.72, 0.38).multiplyScalar(1.5) }),
+    doorLight: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.0, 0.6, 0.28).multiplyScalar(0.62) }),
   };
   return m;
 }

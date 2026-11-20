@@ -135,6 +135,14 @@ export function createEntrance(mats) {
     const sc = createSconce(mats);
     sc.position.set(s * 2.45, 2.7, 0.02);
     sc.scale.setScalar(1.4);
+    // softer haloes outside: real lanterns glow, they don't flare
+    sc.traverse((o) => {
+      if (o.isSprite) {
+        o.material = o.material.clone();
+        o.material.opacity = 0.2;
+        o.scale.multiplyScalar(0.6);
+      }
+    });
     root.add(sc);
     lanterns.push(sc);
   }

@@ -208,13 +208,13 @@ export class World {
 
     // entrance lanterns
     L.lanterns = this.entrance.lanterns.map((s) => {
-      const p = new THREE.PointLight(0xffa860, 7, 7, 2);
+      const p = new THREE.PointLight(0xff9a50, 3.2, 7, 2);
       p.position.copy(s.position).add(new THREE.Vector3(0, 0.1, 0.45));
       scene.add(p);
       return p;
     });
 
-    L.porch = new THREE.PointLight(0xffb27a, 9, 11, 2);
+    L.porch = new THREE.PointLight(0xffa868, 5.5, 11, 2);
     L.porch.position.set(0, 3.6, 4.6);
     scene.add(L.porch);
 
@@ -460,6 +460,7 @@ export class World {
     this.applyDoor(s.door);
     this.applyMood(s.mood, s.celebrate);
     this.grade.uniforms.uFade.value = s.fade;
+    this.bloom.strength = lerp(0.32, 0.55, s.door);
 
     for (const fn of this.updaters) fn(dt, time);
 
@@ -479,7 +480,7 @@ export class World {
       this.entrancePetals.setActive(s.entrancePetals);
       this.entrancePetals.update(dt, time);
     } else this.entrancePetals.mesh.visible = false;
-    this.lights.porch.intensity = 9 * s.entrancePetals;
+    this.lights.porch.intensity = 5.5 * s.entrancePetals;
     this.ambientPetals.setActive(s.ambientPetals);
     this.ambientPetals.update(dt, time);
     this.localPetals.setActive(s.localPetals);
