@@ -19,7 +19,16 @@ export class Ambience {
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) return;
     const ctx = (this.ctx = new Ctx());
-    if (ctx.state === 'suspended') await ctx.resume().catch(() => {});
+    // a scroll or swipe doesn't count as a user gesture for audio — wait for the next tap/click/key
+    if (ctx.state !== 'running') {
+      ctx.resume().catch(() => {});
+      const unlock = () => {
+        ctx.resume().catch(() => {});
+        if (this.el && !this.muted) this.el.play().catch(() => {});
+        if (ctx.state === 'running') ['pointerdown', 'touchend', 'keydown'].forEach((t) => window.removeEventListener(t, unlock, true));
+      };
+      ['pointerdown', 'touchend', 'keydown'].forEach((t) => window.addEventListener(t, unlock, true));
+    }
 
     this.master = ctx.createGain();
     this.master.gain.value = 0;
@@ -54,8 +63,8 @@ export class Ambience {
       const src = this.ctx.createMediaElementSource(el);
       src.connect(this.dry);
       src.connect(this.reverb);
-      await el.play();
       this.el = el;
+      el.play().catch(() => {}); // may wait for a tap if we entered by scrolling
       return true;
     } catch {
       return false;

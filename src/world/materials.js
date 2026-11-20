@@ -199,6 +199,8 @@ export function createMaterials() {
     }),
     petal: new THREE.MeshPhysicalMaterial({
       map: petalTexture(),
+      emissive: new THREE.Color(0x4a0614), // a whisper of glow so petals read against the dark
+      emissiveIntensity: 0.6,
       roughness: 0.6,
       sheen: 1,
       sheenRoughness: 0.35,

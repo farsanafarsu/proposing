@@ -112,14 +112,39 @@ function revealIntro() {
     .from('#intro .eyebrow', { autoAlpha: 0, y: 14, duration: 1.4, ease: 'power3.out' }, 1.4)
     .from(titleChars, { autoAlpha: 0, yPercent: 60, rotateX: -70, filter: 'blur(8px)', duration: 1.4, stagger: 0.035, ease: 'power3.out' }, 1.6)
     .from('.intro__sub', { autoAlpha: 0, y: 16, duration: 1.4, ease: 'power3.out' }, 2.8)
-    .from('#enter', { autoAlpha: 0, y: 18, scale: 0.94, duration: 1.4, ease: 'power3.out' }, 3.3);
+    .from('#enter', { autoAlpha: 0, y: 18, scale: 0.94, duration: 1.4, ease: 'power3.out' }, 3.3)
+    .from('.intro__cue', { autoAlpha: 0, duration: 1.2 }, 4)
+    .add(() => (introReady = true), 3.4);
 }
 
-$('#enter').addEventListener('click', enterStory, { once: true });
+/* Enter by tapping the button — or simply by scrolling / swiping / pressing a key */
+let introReady = false;
+let entered = false;
+const cue = $('.intro__cue');
+if (matchMedia('(pointer: coarse)').matches) cue.textContent = 'or swipe up to begin';
+
+$('#enter').addEventListener('click', enterStory);
+window.addEventListener('wheel', (e) => e.deltaY > 8 && enterStory(), { passive: true });
+let touchY = null;
+window.addEventListener('touchstart', (e) => (touchY = e.touches[0].clientY), { passive: true });
+window.addEventListener('touchmove', (e) => touchY !== null && touchY - e.touches[0].clientY > 40 && enterStory(), { passive: true });
+window.addEventListener('keydown', (e) => ['ArrowDown', 'PageDown', ' ', 'Enter'].includes(e.key) && enterStory());
 
 function enterStory() {
+  if (!introReady || entered) return;
+  entered = true;
   audio.start();
+  // stop the slow intro drift so it doesn't fight the entrance glide
+  gsap.killTweensOf([world.rig.pos, world.rig.target]);
   const [p0, t0] = SHOTS.doorway;
+
+  // one continuous glide: steps → through the doorway → into the room (no stop in between)
+  const from = world.rig.pos.clone();
+  const fromT = world.rig.target.clone();
+  const path = new THREE.CatmullRomCurve3([from, new THREE.Vector3(0, 1.6, 4.4), new THREE.Vector3(0, 1.7, 0.9), p0], false, 'centripetal');
+  const look = new THREE.CatmullRomCurve3([fromT, new THREE.Vector3(0, 1.8, -2), new THREE.Vector3(0, 1.6, -8), t0], false, 'centripetal');
+  const glide = { t: 0 };
+
   const tl = gsap.timeline({
     onComplete: () => {
       body.classList.remove('is-locked');
@@ -133,20 +158,31 @@ function enterStory() {
   });
   tl.to('#enter', { scale: 0.96, duration: 0.15, yoyo: true, repeat: 1 })
     .to(titleChars, { autoAlpha: 0, yPercent: -40, filter: 'blur(6px)', duration: 0.9, stagger: 0.012, ease: 'power2.in' }, 0.1)
-    .to(['#intro .eyebrow', '.intro__sub', '#enter'], { autoAlpha: 0, y: -12, duration: 0.8, ease: 'power2.in' }, 0.1)
+    .to(['#intro .eyebrow', '.intro__sub', '#enter', '.intro__cue'], { autoAlpha: 0, y: -12, duration: 0.8, ease: 'power2.in' }, 0.1)
     .set('#intro', { autoAlpha: 0 }, 1.2)
-    // the doors swing open, golden light floods out
-    .to(world.state, { door: 1, duration: 3.6, ease: 'none' }, 0.5)
-    .to(world.rig.pos, { x: 0, y: 1.62, z: 4.4, duration: 3, ease: 'power2.inOut' }, 0.6)
-    .to(world.rig.target, { x: 0, y: 1.7, z: -4, duration: 3, ease: 'power2.inOut' }, 0.6)
-    // ...and we step inside
-    .to(world.rig.pos, { x: p0.x, y: p0.y, z: p0.z, duration: 3.6, ease: 'power2.inOut' }, 3.2)
-    .to(world.rig.target, { x: t0.x, y: t0.y, z: t0.z, duration: 3.6, ease: 'power2.inOut' }, 3.2)
+    // the doors swing open, golden light floods out, a gust of petals blows towards us
+    .to(world.state, { door: 1, duration: 3.0, ease: 'none' }, 0.4)
+    .add(() => world.entrancePetals.burst(new THREE.Vector3(0, 4.3, 0.5), world.isMobile ? 50 : 90, 0.7, { x: 0, z: 1 }), 0.9)
+    .to(
+      glide,
+      {
+        t: 1,
+        duration: 5.2,
+        ease: 'power2.inOut',
+        onUpdate: () => {
+          path.getPoint(glide.t, world.rig.pos);
+          look.getPoint(glide.t, world.rig.target);
+        },
+      },
+      0.6
+    )
+    // the outside shower stops once we're indoors (saves work)
+    .to(world.state, { entrancePetals: 0, duration: 1 }, 4.8)
     .add(() => {
       // freeze door shadows once we're inside — saves a shadow pass per frame
       world.lights.door.shadow.autoUpdate = false;
       world.lights.door.shadow.needsUpdate = true;
-    }, 7);
+    }, 5.6);
 }
 
 /* -------------------------------------------------------------- sound */

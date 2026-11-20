@@ -10,8 +10,11 @@ const dummy = new THREE.Object3D();
  * handful outward for the celebration.
  */
 export class PetalField {
-  constructor({ count = 300, bounds, material, size = [0.035, 0.06], fall = [0.08, 0.2], floorY = 0.02, active = 1 }) {
+  constructor({ count = 300, bounds, material, size = [0.035, 0.06], fall = [0.08, 0.2], floorY = 0.02, floorAt = null, rest = [2, 6], drift = 0, active = 1 }) {
     this.count = count;
+    this.floorAt = floorAt; // optional (x, z) => ground height, e.g. steps
+    this.rest = rest; // seconds a petal lies on the ground before fading away
+    this.drift = drift; // steady breeze along +z
     this.bounds = bounds; // THREE.Box3
     this.floorY = floorY;
     this.fall = fall;
@@ -51,7 +54,7 @@ export class PetalField {
     this.mesh.count = Math.max(0, Math.min(this.count, Math.floor(this.count * a)));
   }
 
-  burst(origin, n = 80, power = 1.6) {
+  burst(origin, n = 80, power = 1.6, dir = null) {
     const start = Math.floor(Math.random() * this.count);
     for (let k = 0; k < n; k++) {
       const o = this.p[(start + k) % this.count];
@@ -61,8 +64,9 @@ export class PetalField {
       const a = Math.random() * Math.PI * 2;
       const up = 0.6 + Math.random() * 1.2;
       const sp = (0.3 + Math.random()) * power;
-      o.vx = Math.cos(a) * sp;
-      o.vz = Math.sin(a) * sp;
+      // optional gust direction: scatter around it instead of all round
+      o.vx = Math.cos(a) * sp * (dir ? 0.6 : 1) + (dir ? dir.x * sp : 0);
+      o.vz = Math.sin(a) * sp * (dir ? 0.6 : 1) + (dir ? dir.z * sp : 0);
       o.vy = up * power;
       o.boost = 1;
       o.landed = 0;
@@ -74,9 +78,14 @@ export class PetalField {
     const b = this.bounds;
     for (let i = 0; i < n; i++) {
       const o = this.p[i];
+      let fade = 1;
       if (o.landed > 0) {
         o.landed -= dt;
-        if (o.landed <= 0) this._spawn(o, false);
+        fade = Math.min(1, o.landed / 0.8);
+        if (o.landed <= 0) {
+          this._spawn(o, false);
+          fade = 1;
+        }
       } else {
         if (o.boost > 0) {
           // ballistic burst, slowed by air drag, then settles into normal fall
@@ -93,21 +102,23 @@ export class PetalField {
         const sway = Math.sin(time * 0.9 + o.phase);
         o.x += (o.vx + sway * 0.05) * dt;
         o.y += o.vy * dt;
-        o.z += (o.vz + Math.cos(time * 0.7 + o.phase) * 0.04) * dt;
+        o.z += (o.vz + this.drift + Math.cos(time * 0.7 + o.phase) * 0.04) * dt;
         o.rx += o.sx * dt;
         o.ry += o.sy * dt;
         o.rz += o.sz * dt * (0.5 + 0.5 * sway);
-        if (o.y < this.floorY) {
-          // rest briefly on the floor, then respawn above
-          o.y = this.floorY;
+        const floor = this.floorAt ? this.floorAt(o.x, o.z) : this.floorY;
+        if (o.y < floor) {
+          // settle flat on the ground, rest a while, then fade and respawn above
+          o.y = floor + 0.004;
           o.rx = -Math.PI / 2;
-          o.landed = 2 + Math.random() * 4;
+          o.ry = 0;
+          o.landed = this.rest[0] + Math.random() * (this.rest[1] - this.rest[0]);
         }
         if (o.boost <= 0 && (o.x < b.min.x - 1 || o.x > b.max.x + 1 || o.z < b.min.z - 1 || o.z > b.max.z + 1)) this._spawn(o, false);
       }
       dummy.position.set(o.x, o.y, o.z);
       dummy.rotation.set(o.rx, o.ry, o.rz);
-      dummy.scale.setScalar(o.s);
+      dummy.scale.setScalar(o.s * fade);
       dummy.updateMatrix();
       this.mesh.setMatrixAt(i, dummy.matrix);
     }

@@ -515,6 +515,26 @@ body.is-entered .sound {
   color: rgba(244, 232, 220, 0.78);
 }
 
+.intro__cue {
+  margin: 18px 0 0;
+  font-family: var(--display);
+  font-size: 10px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: rgba(196, 154, 101, 0.75);
+  animation: cue 2.6s ease-in-out infinite;
+}
+@keyframes cue {
+  0%, 100% { transform: translateY(0); opacity: 0.55; }
+  50% { transform: translateY(5px); opacity: 1; }
+}
+@media (max-width: 300px), (orientation: landscape) and (max-height: 520px) {
+  .intro__cue {
+    margin-top: 10px;
+    font-size: 8px;
+  }
+}
+
 /* --------------------------------------------------------------------------
    Captions
    -------------------------------------------------------------------------- */
@@ -969,6 +989,7 @@ body.is-entered .sound {
 @media (prefers-reduced-motion: reduce) {
   .grain,
   .btn-gold::after,
+  .intro__cue,
   .hint-line {
     animation: none;
   }

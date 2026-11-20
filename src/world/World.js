@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { createMaterials } from './materials.js';
 import { setMaxAnisotropy } from './textures.js';
-import { createEntrance } from './entrance.js';
+import { createEntrance, entranceFloorAt } from './entrance.js';
 import { createRestaurant, HERO, ROOM } from './restaurant.js';
 import { createHeroTable, TABLE_TOP } from './heroTable.js';
 import { PetalField, Motes } from './particles.js';
@@ -37,6 +37,7 @@ export class World {
       celebrate: 0,
       fade: 1, // post fade to black
       ambientPetals: 1,
+      entrancePetals: 1, // the shower outside the doors
       localPetals: 0,
     };
     this.orbit = { weight: 0, angle: 0, radius: 0.6, height: 0.32, speed: 0.08 };
@@ -213,6 +214,10 @@ export class World {
       return p;
     });
 
+    L.porch = new THREE.PointLight(0xffb27a, 9, 11, 2);
+    L.porch.position.set(0, 3.6, 4.6);
+    scene.add(L.porch);
+
     // light spilling out through the opening doors — casts the doors' shadows
     L.door = new THREE.SpotLight(0xffb27a, 0, 20, 0.62, 0.7, 2);
     L.door.position.set(0, 3.1, -3);
@@ -283,12 +288,25 @@ export class World {
     const { scene, isMobile, mats } = this;
     this.ambientPetals = new PetalField({
       count: this.isTiny ? 60 : isMobile ? 160 : 320,
-      bounds: new THREE.Box3(new THREE.Vector3(-5, 0, -34), new THREE.Vector3(5, 4.2, 9)),
+      bounds: new THREE.Box3(new THREE.Vector3(-5, 0, -34), new THREE.Vector3(5, 4.2, -0.6)),
       material: mats.petal,
       size: [0.035, 0.06],
       fall: [0.1, 0.24],
     });
     scene.add(this.ambientPetals.mesh);
+
+    // a steady shower of petals drifting down from above the doors onto the steps
+    this.entrancePetals = new PetalField({
+      count: this.isTiny ? 90 : isMobile ? 220 : 420,
+      bounds: new THREE.Box3(new THREE.Vector3(-3.2, -0.45, 0.2), new THREE.Vector3(3.2, 5.4, 6.2)),
+      material: mats.petal,
+      size: [0.06, 0.1],
+      fall: [0.35, 0.65],
+      floorAt: entranceFloorAt,
+      rest: [3, 7],
+      drift: 0.05,
+    });
+    scene.add(this.entrancePetals.mesh);
 
     this.localPetals = new PetalField({
       count: this.isTiny ? 50 : isMobile ? 120 : 220,
@@ -456,6 +474,12 @@ export class World {
     this.hero.ringBox.update(time);
 
     // particles
+    if (s.entrancePetals > 0.001) {
+      this.entrancePetals.mesh.visible = true;
+      this.entrancePetals.setActive(s.entrancePetals);
+      this.entrancePetals.update(dt, time);
+    } else this.entrancePetals.mesh.visible = false;
+    this.lights.porch.intensity = 9 * s.entrancePetals;
     this.ambientPetals.setActive(s.ambientPetals);
     this.ambientPetals.update(dt, time);
     this.localPetals.setActive(s.localPetals);

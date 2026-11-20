@@ -2,6 +2,17 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeByMaterial, createRose, createSconce } from './props.js';
 import { radialTexture } from './textures.js';
+import { petalGeometry } from './props.js';
+
+/** Ground height outside the doors: threshold, three steps, then the plaza. */
+export function entranceFloorAt(x, z) {
+  if (z < 0) return 0;
+  if (Math.abs(x) > 2.1 + Math.min(2, Math.floor(z / 0.45)) * 0.3) return -0.45;
+  if (z < 0.45) return 0;
+  if (z < 0.9) return -0.15;
+  if (z < 1.35) return -0.3;
+  return -0.45;
+}
 
 const DOOR_W = 1.25; // each leaf
 const DOOR_H = 3.5;
@@ -153,6 +164,9 @@ export function createEntrance(mats) {
   runner.receiveShadow = true;
   root.add(runner);
 
+  /* ---------- petals already fallen on the steps, the carpet and the aisle inside */
+  root.add(fallenPetals(mats));
+
   return {
     root,
     doors: [doorLeft, doorRight],
@@ -200,6 +214,26 @@ function createDoorLeaf(mats, dir) {
   g.add(m);
   g.userData.dir = dir;
   return g;
+}
+
+function fallenPetals(mats) {
+  const n = 260;
+  const geo = petalGeometry({ w: 0.8, l: 1, segU: 3, segV: 4, cup: 0.25, curl: 0.15 });
+  const mesh = new THREE.InstancedMesh(geo, mats.petal, n);
+  const d = new THREE.Object3D();
+  for (let i = 0; i < n; i++) {
+    // denser along the red carpet, thinning out to the sides
+    const spread = Math.random() < 0.7 ? 1.1 : 3.6;
+    const x = (Math.random() - 0.5) * 2 * spread * Math.random();
+    const z = i < 200 ? 0.05 + Math.pow(Math.random(), 1.4) * 8 : -0.4 - Math.random() * 5;
+    d.position.set(x, (z < 0 ? 0.012 : entranceFloorAt(x, z) + 0.006) + Math.random() * 0.002, z);
+    d.rotation.set(-Math.PI / 2, 0, Math.random() * Math.PI * 2);
+    d.scale.setScalar(0.04 + Math.random() * 0.035);
+    d.updateMatrix();
+    mesh.setMatrixAt(i, d.matrix);
+  }
+  mesh.receiveShadow = true;
+  return mesh;
 }
 
 export function createRoseUrn(mats) {
