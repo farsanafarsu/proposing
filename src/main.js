@@ -10,6 +10,8 @@ import { Fireworks } from './ui/fireworks.js';
 import { initCursor } from './ui/cursor.js';
 
 gsap.registerPlugin(ScrollTrigger);
+// mobile browsers resize the viewport as their toolbars slide — don't recalculate the story for that
+ScrollTrigger.config({ ignoreMobileResize: true });
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 window.scrollTo(0, 0);
 

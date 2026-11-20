@@ -19,6 +19,7 @@ export class World {
   constructor(canvas) {
     this.canvas = canvas;
     this.isMobile = matchMedia('(pointer: coarse)').matches || Math.min(innerWidth, innerHeight) < 600;
+    this.isTiny = Math.min(innerWidth, innerHeight) < 320; // smartwatches
     this.reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // values tweened by the story
@@ -57,7 +58,9 @@ export class World {
       powerPreference: 'high-performance',
       stencil: false,
     });
-    this.pixelRatio = Math.min(window.devicePixelRatio, this.isMobile ? 1.5 : 1.75);
+    this.maxPixelRatio = Math.min(window.devicePixelRatio, this.isTiny ? 1.25 : this.isMobile ? 1.5 : 1.75);
+    this.pixelRatio = this.maxPixelRatio;
+    this.perf = { frames: 0, time: 0, settled: false };
     renderer.setPixelRatio(this.pixelRatio);
     renderer.setSize(innerWidth, innerHeight, false);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -127,8 +130,23 @@ export class World {
     composer.render();
     await step(1);
 
-    window.addEventListener('resize', () => this.resize());
+    let raf = 0;
+    this.lastSize = { w: innerWidth, h: innerHeight };
+    const onResize = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        // on phones the toolbar sliding in/out changes only the height a little — skip that
+        const dw = Math.abs(innerWidth - this.lastSize.w);
+        const dh = Math.abs(innerHeight - this.lastSize.h);
+        if (this.isMobile && dw === 0 && dh < 160) return;
+        this.lastSize = { w: innerWidth, h: innerHeight };
+        this.resize();
+      });
+    };
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', () => setTimeout(onResize, 250));
     window.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse') return; // touch drags are for scrolling
       this.pointer.set((e.clientX / innerWidth) * 2 - 1, (e.clientY / innerHeight) * 2 - 1);
     });
   }
@@ -259,7 +277,7 @@ export class World {
   buildParticles() {
     const { scene, isMobile, mats } = this;
     this.ambientPetals = new PetalField({
-      count: isMobile ? 160 : 320,
+      count: this.isTiny ? 60 : isMobile ? 160 : 320,
       bounds: new THREE.Box3(new THREE.Vector3(-5, 0, -34), new THREE.Vector3(5, 4.2, 9)),
       material: mats.petal,
       size: [0.035, 0.06],
@@ -268,7 +286,7 @@ export class World {
     scene.add(this.ambientPetals.mesh);
 
     this.localPetals = new PetalField({
-      count: isMobile ? 120 : 220,
+      count: this.isTiny ? 50 : isMobile ? 120 : 220,
       bounds: new THREE.Box3(new THREE.Vector3(-0.9, 0.6, HERO.z - 0.8), new THREE.Vector3(0.9, 1.8, HERO.z + 0.3)),
       material: mats.petal,
       size: [0.018, 0.032],
@@ -294,12 +312,33 @@ export class World {
     return THREE.MathUtils.clamp(v, 38, 74);
   }
 
+  /** Lower the render resolution if the device can't hold ~40fps (older Android, watches). */
+  adaptQuality(dt) {
+    const p = this.perf;
+    if (p.settled || this.state.fade > 0.5) return;
+    p.frames++;
+    p.time += dt;
+    if (p.time < 2.5) return;
+    const fps = p.frames / p.time;
+    p.frames = 0;
+    p.time = 0;
+    const floor = this.isMobile ? 0.75 : 1;
+    if (fps < 40 && this.pixelRatio > floor) {
+      this.pixelRatio = Math.max(floor, +(this.pixelRatio - 0.25).toFixed(2));
+      this.resize();
+      if (fps < 24 && this.bloom.enabled && this.pixelRatio <= floor) this.bloom.enabled = false;
+    } else if (fps >= 50) {
+      p.settled = true;
+    }
+  }
+
   resize() {
     const w = innerWidth;
     const h = innerHeight;
     this.camera.aspect = w / h;
     this.baseFov = this.fovFor(this.camera.aspect);
     this.camera.updateProjectionMatrix();
+    this.renderer.setPixelRatio(this.pixelRatio);
     this.renderer.setSize(w, h, false);
     if (this.composer) {
       this.composer.setPixelRatio(this.pixelRatio);
@@ -416,6 +455,7 @@ export class World {
     this.ringMotes.update(time);
 
     this.composer.render(dt);
+    this.adaptQuality(dt);
   }
 }
 
