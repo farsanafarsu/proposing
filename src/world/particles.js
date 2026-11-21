@@ -147,13 +147,14 @@ export class Motes {
         uTime: { value: 0 },
         uSize: { value: size * Math.min(window.devicePixelRatio, 2) },
         uOpacity: { value: opacity },
-        uColor: { value: new THREE.Color(color).multiplyScalar(2.2) },
+        uColor: { value: new THREE.Color(color).multiplyScalar(1.3) },
         uRise: { value: 0.02 },
       },
       vertexShader: /* glsl */ `
         uniform float uTime; uniform float uSize; uniform float uRise;
         attribute float aSeed;
         varying float vTw;
+        varying float vNear;
         void main() {
           vec3 p = position;
           float t = uTime * (0.25 + aSeed * 0.35) + aSeed * 40.0;
@@ -163,17 +164,20 @@ export class Motes {
           vec4 mv = modelViewMatrix * vec4(p, 1.0);
           gl_Position = projectionMatrix * mv;
           vTw = 0.4 + 0.6 * pow(0.5 + 0.5 * sin(uTime * (1.5 + aSeed * 3.0) + aSeed * 30.0), 3.0);
-          gl_PointSize = uSize * (0.4 + aSeed) * (1.0 / -mv.z);
+          // never let a speck balloon as the camera passes close: cap its size and fade it out near the lens
+          gl_PointSize = min(uSize * (0.4 + aSeed) * (1.0 / -mv.z), uSize * 2.5);
+          vNear = smoothstep(0.12, 0.45, -mv.z);
         }
       `,
       fragmentShader: /* glsl */ `
         uniform vec3 uColor; uniform float uOpacity;
         varying float vTw;
+        varying float vNear;
         void main() {
           float d = length(gl_PointCoord - 0.5);
           float a = smoothstep(0.5, 0.0, d);
           a *= a;
-          gl_FragColor = vec4(uColor * vTw, a * uOpacity * vTw);
+          gl_FragColor = vec4(uColor * vTw, a * uOpacity * vTw * vNear);
         }
       `,
       transparent: true,

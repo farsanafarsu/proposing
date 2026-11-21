@@ -330,8 +330,8 @@ function celebrate() {
       fireworks.start(16);
     }, 0.2)
     .to(world.state, { celebrate: 1, localPetals: 1, ambientPetals: 1, duration: 3, ease: 'power2.out' }, 0)
-    .to(box.sparkles, { intensity: 0.75, duration: 1.5 }, 0)
-    .to(world.ringMotes, { opacity: 0.7, duration: 2 }, 0)
+    .to(box.sparkles, { intensity: 0.5, duration: 1.5 }, 0)
+    .to(world.ringMotes, { opacity: 0.3, duration: 2 }, 0)
     .to(world.orbit, { weight: 1, radius: 0.62, height: 0.3, speed: 0.12, duration: 6, ease: 'power2.inOut' }, 0.3)
     .set('#finale', { autoAlpha: 1 }, 1.6)
     .from('#finale .eyebrow', { autoAlpha: 0, y: 12, duration: 1.4, ease: 'power3.out' }, 1.6)

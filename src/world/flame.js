@@ -114,10 +114,12 @@ export class Flame extends THREE.Group {
     if (!this.visible) return;
     this.flame.scale.set(this.size.x * (0.45 + 0.55 * Math.min(lit, 1.3)), this.size.y * lit, 1);
     u.uIntensity.value = this.baseIntensity * flicker * this.brightness * Math.min(lit, 1);
-    this.halo.material.opacity = this.baseHalo * flicker * this.brightness * Math.min(lit, 1.2);
+    // a glow right next to the lens would wash out the frame: fade it as the camera comes close
+    this.getWorldPosition(this._wp);
+    const near = THREE.MathUtils.smoothstep(this._wp.distanceTo(camera.position), 0.12, 0.5);
+    this.halo.material.opacity = this.baseHalo * flicker * this.brightness * Math.min(lit, 1.2) * near;
     this.halo.scale.setScalar(this.haloSize * (0.96 + flicker * 0.06) * (0.6 + 0.4 * lit));
     // cylindrical billboard: rotate around Y towards the camera
-    this.getWorldPosition(this._wp);
     this.flame.rotation.y = Math.atan2(camera.position.x - this._wp.x, camera.position.z - this._wp.z);
   }
 }
