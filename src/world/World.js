@@ -19,10 +19,13 @@ const tick = () => new Promise((r) => requestAnimationFrame(() => r()));
 export class World {
   constructor(canvas) {
     this.canvas = canvas;
-    this.isMobile = matchMedia('(pointer: coarse)').matches || Math.min(innerWidth, innerHeight) < 600;
+    // a laptop with a mouse/trackpad is never a phone, even when Windows display scaling (125%, 150%)
+    // makes its browser window report fewer than 600 CSS pixels
+    const finePointer = matchMedia('(hover: hover) and (pointer: fine)').matches;
+    this.isMobile = matchMedia('(pointer: coarse)').matches || (!finePointer && Math.min(innerWidth, innerHeight) < 600);
     this.isTiny = Math.min(innerWidth, innerHeight) < 320; // smartwatches
     // every highlight around the ring is scaled by this: soft and natural on every screen
-    // (phones go lower still — no shadow from the box lid there, and small, bright screens)
+    // (phones go a little lower still: small, bright screens)
     this.glare = this.isMobile ? 0.4 : 0.5;
     this.reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -258,8 +261,9 @@ export class World {
     L.ring = new THREE.SpotLight(0xfff0dc, 0, 5, 0.085, 1, 2);
     L.ring.position.set(box.x + 0.35, 2.3, box.z + 1.25);
     L.ring.target.position.copy(box).add(new THREE.Vector3(0, 0.03, 0));
-    L.ring.castShadow = !isMobile;
-    L.ring.shadow.mapSize.set(1024, 1024);
+    // the lid's shadow keeps the light off the inside of the box: needed on every device
+    L.ring.castShadow = true;
+    L.ring.shadow.mapSize.set(isMobile ? 512 : 1024, isMobile ? 512 : 1024);
     L.ring.shadow.bias = -0.0002;
     L.ring.shadow.camera.near = 1;
     L.ring.shadow.camera.far = 4;
