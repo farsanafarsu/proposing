@@ -121,9 +121,9 @@ export class Story {
     shot('closer', 110, 8);
     tl.to(S, { localPetals: 1, duration: 10 }, 110);
     tl.to(box, { open: 1, duration: 8, ease: 'none' }, 117);
-    tl.to(w.ringMotes, { opacity: 1, duration: 8 }, 118);
+    tl.to(w.ringMotes, { opacity: 0.45, duration: 8 }, 118);
     tl.to(box, { rise: 1, duration: 8, ease: 'none' }, 123);
-    tl.to(box.sparkles, { intensity: 1, duration: 6 }, 125);
+    tl.to(box.sparkles, { intensity: 0.6, duration: 6 }, 125);
     shot('ring', 129, 6);
     tl.to('.letterbox', { scaleY: 0, duration: 4, ease: 'power2.inOut' }, 132);
     tl.fromTo('#proposal', { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.5 }, 133);

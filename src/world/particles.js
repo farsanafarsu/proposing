@@ -210,7 +210,7 @@ export class Sparkles extends THREE.Group {
       const s = new THREE.Sprite(
         new THREE.SpriteMaterial({
           map: tex,
-          color: new THREE.Color(1, 0.95, 0.85).multiplyScalar(3),
+          color: new THREE.Color(1, 0.95, 0.85).multiplyScalar(1.3),
           transparent: true,
           depthWrite: false,
           depthTest: false,

@@ -270,7 +270,7 @@ export class World {
           void main(){ vY = position.y; vec4 mv = modelViewMatrix*vec4(position,1.); vV = normalize(-mv.xyz); vN = normalize(normalMatrix*normal); gl_Position = projectionMatrix*mv; }`,
         fragmentShader: `uniform float uOpacity; uniform float uLen; varying float vY; varying vec3 vN; varying vec3 vV;
           void main(){ float t = clamp(-vY / uLen, 0., 1.); float rim = pow(abs(dot(normalize(vN), normalize(vV))), 2.0);
-            float a = rim * uOpacity * (0.25 + 0.75 * t) * (1.0 - smoothstep(0.92, 1.0, t)) * 0.16;
+            float a = rim * uOpacity * (0.25 + 0.75 * t) * (1.0 - smoothstep(0.92, 1.0, t)) * 0.07;
             gl_FragColor = vec4(vec3(1.0, 0.9, 0.75) * a * 2.0, a); }`,
         transparent: true,
         depthWrite: false,
@@ -395,7 +395,7 @@ export class World {
     L.hemi.intensity = lerp(0.35, 0.05, k);
     L.moon.intensity = lerp(0.25, 0.0, Math.max(m, c));
     L.hero.intensity = lerp(9, 1.2, k) + c * 3;
-    L.ring.intensity = 5 * m;
+    L.ring.intensity = 2.2 * m; // a gentle pool of light, not a stage spot
     L.ring.shadow.autoUpdate = m > 0.01; // no shadow pass while the ring spotlight is off
     this.mats.bulb.color.copy(this.bulbBase).multiplyScalar(lerp(1, 0.35, k));
     for (const ch of this.restaurant.chandeliers) ch.userData.halos.children.forEach((h) => (h.material.opacity = lerp(0.28, 0.1, k)));
@@ -460,7 +460,8 @@ export class World {
     this.applyDoor(s.door);
     this.applyMood(s.mood, s.celebrate);
     this.grade.uniforms.uFade.value = s.fade;
-    this.bloom.strength = lerp(0.32, 0.55, s.door);
+    // ease the glow off as the room darkens so the ring reads naturally
+    this.bloom.strength = lerp(0.32, 0.55, s.door) * lerp(1, 0.55, s.mood);
 
     for (const fn of this.updaters) fn(dt, time);
 

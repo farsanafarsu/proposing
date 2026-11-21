@@ -43,7 +43,7 @@ export function createMaterials() {
       roughness: 0.08,
       clearcoat: 1,
       clearcoatRoughness: 0.05,
-      envMapIntensity: 2.2,
+      envMapIntensity: 1.4,
     }),
     door: new THREE.MeshStandardMaterial({
       map: woodTexture({ base: '#3a1a0e', grain: '#160703', seed: 4 }),

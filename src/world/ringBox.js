@@ -80,7 +80,7 @@ export class RingBox extends THREE.Group {
       s.rotation.z = a - Math.PI / 2;
       this.ring.add(s);
     }
-    this.sparkles = new Sparkles({ count: 8, radius: 0.0045, size: 0.028 });
+    this.sparkles = new Sparkles({ count: 5, radius: 0.0045, size: 0.016 });
     this.sparkles.position.y = 0.006;
     head.add(this.sparkles);
     this.ring.add(band2, head);
@@ -140,12 +140,12 @@ function diamondMaterial() {
     transmission: 1,
     thickness: 0.004,
     ior: 2.42,
-    dispersion: 5,
-    specularIntensity: 1,
+    dispersion: 1.2,
+    specularIntensity: 0.8,
     specularColor: new THREE.Color(1, 1, 1),
-    envMapIntensity: 4,
+    envMapIntensity: 1.8,
     flatShading: true,
-    iridescence: 0.35,
+    iridescence: 0.12,
     iridescenceIOR: 1.6,
   });
 }
