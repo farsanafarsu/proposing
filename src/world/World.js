@@ -70,7 +70,7 @@ export class World {
     renderer.setPixelRatio(this.pixelRatio);
     renderer.setSize(innerWidth, innerHeight, false);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    renderer.toneMappingExposure = 0.95;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -229,7 +229,7 @@ export class World {
     scene.add(L.door, L.door.target);
 
     // key light over the special table
-    L.hero = new THREE.SpotLight(0xffd0a0, 9, 9, 0.46, 0.85, 2);
+    L.hero = new THREE.SpotLight(0xffc896, 5, 9, 0.46, 0.9, 2); // soft, warm key — candlelight, not a stage
     L.hero.position.set(0.25, ROOM.height - 0.25, HERO.z + 1.1);
     L.hero.target.position.set(0, TABLE_TOP, HERO.z);
     L.hero.castShadow = true;
@@ -399,14 +399,14 @@ export class World {
     L.chand.forEach((p, i) => (p.intensity = (i === 3 ? 8 : 20) * lerp(1, 0.1, k)));
     L.hemi.intensity = lerp(0.35, 0.05, k);
     L.moon.intensity = lerp(0.25, 0.0, Math.max(m, c));
-    L.hero.intensity = lerp(9, 1.2, k) + c * 0.5;
+    L.hero.intensity = lerp(5, 1.0, k) + c * 0.4;
     L.ring.intensity = 2.2 * m * (1 - c * 0.5); // a gentle pool of light, not a stage spot
     L.ring.shadow.autoUpdate = m > 0.01; // no shadow pass while the ring spotlight is off
     this.mats.bulb.color.copy(this.bulbBase).multiplyScalar(lerp(1, 0.35, k));
     for (const ch of this.restaurant.chandeliers) ch.userData.halos.children.forEach((h) => (h.material.opacity = lerp(0.28, 0.1, k)));
     this.scene.environmentIntensity = lerp(0.55, 0.3, k);
     this.scene.fog.density = lerp(0.03, 0.11, k);
-    this.renderer.toneMappingExposure = lerp(1.05, 1.0, k);
+    this.renderer.toneMappingExposure = lerp(0.95, 0.92, k);
     this.grade.uniforms.uVignette.value = lerp(0.55, 1.05, k);
     for (const f of this.restaurant.flames) f.brightness = lerp(1, 0.45, k);
     this.beam.material.uniforms.uOpacity.value = m * (1 - c * 0.6);
@@ -466,7 +466,7 @@ export class World {
     this.applyMood(s.mood, s.celebrate);
     this.grade.uniforms.uFade.value = s.fade;
     // ease the glow off as the room darkens so the ring reads naturally
-    this.bloom.strength = lerp(0.32, 0.55, s.door) * lerp(1, 0.55, s.mood);
+    this.bloom.strength = lerp(0.28, 0.4, s.door) * lerp(1, 0.6, s.mood);
 
     for (const fn of this.updaters) fn(dt, time);
 

@@ -119,6 +119,7 @@ export function createMaterials() {
     }),
     linen: new THREE.MeshPhysicalMaterial({
       map: linenTexture(),
+      color: 0xe6d9c6, // warm ivory rather than paper white, so it doesn't glare under the key light
       roughness: 0.82,
       sheen: 0.4,
       sheenColor: new THREE.Color(0xfff6e8),
