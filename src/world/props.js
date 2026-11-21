@@ -356,17 +356,38 @@ export function createVase(mats, { roses = 5, scale = 1 } = {}) {
     mats.water
   );
   g.add(water, vase);
+  // each stem runs from its bloom, in through the mouth of the vase, down to the bottom
+  const MOUTH_Y = 0.205;
   const heads = [];
+  const up = new THREE.Vector3(0, 1, 0);
   for (let i = 0; i < roses; i++) {
+    const centre = i === 0;
     const a = (i / roses) * Math.PI * 2 + 0.3;
-    const r = i === 0 ? 0 : 0.045;
-    const lean = new THREE.Vector3(-Math.cos(a) * r * 0.4, 0, -Math.sin(a) * r * 0.4);
-    const rose = createRose(mats, { scale: 0.05 + (i % 2) * 0.006, stemLength: 0.3, lean });
-    const hy = i === 0 ? 0.33 : 0.29 + (i % 3) * 0.015;
-    rose.position.set(Math.cos(a) * r, hy, Math.sin(a) * r);
-    rose.rotation.set(Math.sin(a) * 0.35 * (r > 0), a, -Math.cos(a) * 0.35 * (r > 0));
+    const out = new THREE.Vector3(Math.cos(a), 0, Math.sin(a));
+    const scale = 0.05 + (i % 2) * 0.006;
+    const r = centre ? 0 : 0.05;
+    const hy = centre ? 0.335 : 0.29 + (i % 3) * 0.016;
+    const head = new THREE.Vector3().copy(out).multiplyScalar(r).setY(hy);
+    // the bloom tips outwards a little, following its stem
+    const axis = new THREE.Vector3().copy(out).multiplyScalar(centre ? 0 : 0.42).add(up).normalize();
+    const rose = createRose(mats, { scale, stemLength: 0 });
+    rose.position.copy(head);
+    rose.quaternion.setFromUnitVectors(up, axis);
+    rose.rotateY(a);
     heads.push(rose);
     g.add(rose);
+
+    const base = head.clone().addScaledVector(axis, -scale * 0.3);
+    const mouth = new THREE.Vector3().copy(out).multiplyScalar(centre ? 0 : 0.011).setY(MOUTH_Y);
+    const bottom = new THREE.Vector3().copy(out).multiplyScalar(centre ? 0.004 : 0.02).setY(0.012);
+    const curve = new THREE.CatmullRomCurve3([
+      base,
+      base.clone().lerp(mouth, 0.5).addScaledVector(out, r * 0.15),
+      mouth,
+      mouth.clone().lerp(bottom, 0.5),
+      bottom,
+    ]);
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 20, 0.0032, 6), mats.stem));
   }
   g.scale.setScalar(scale);
   g.userData.roses = heads;
