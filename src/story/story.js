@@ -21,8 +21,12 @@ export const SHOTS = {
   glasses: [V(0.78, 1.0, -29.35), V(0.36, 0.88, -30.12)],
   candle: [V(-0.5, 1.0, -29.15), V(0.02, 0.95, -30.22)],
   letter: [V(0.08, 1.18, -28.82), V(0.07, 0.8, -29.5)],
-  surprise: [V(0.12, 1.02, -29.05), V(-0.01, 0.8, -29.86)],
+  // the proposal: wide as the room falls dark → low across the rose → the box opens
+  // → eye level with the ring as it rises → settle into the final frame
+  surprise: [V(0.58, 1.16, -28.88), V(0.02, 0.8, -29.86)],
+  rose: [V(-0.3, 0.865, -29.47), V(0.07, 0.79, -29.84)],
   closer: [V(0.05, 0.99, -29.38), V(-0.01, 0.81, -29.86)],
+  rise: [V(-0.11, 0.885, -29.6), V(-0.01, 0.84, -29.86)],
   ring: [V(0.0, 0.935, -29.47), V(-0.01, 0.835, -29.86)],
 };
 
@@ -110,21 +114,31 @@ export class Story {
     tl.to(w.letterMotes, { opacity: 0, duration: 4 }, 97);
     tl.to(w.rig, { fov: 0, duration: 6 }, 97);
 
-    /* Scene 5 — the surprise */
+    /* Scene 5 — the surprise: the room falls dark, the camera drifts wide to show the table alone in its light */
     tl.to(S, { mood: 1, duration: 9, ease: 'power1.inOut' }, 101);
-    shot('surprise', 101, 9);
+    shot('surprise', 101, 8, 'power1.inOut');
     tl.to(S, { ambientPetals: 0.45, duration: 6 }, 102);
     caption(cap('question'), 105, 113);
     tl.to(this.fx, { candle: 1.2, duration: 6 }, 106);
 
     /* Scene 6 — the proposal */
-    shot('closer', 110, 8);
+    // low across the linen: the rose in the foreground, the closed box waiting beside it
+    shot('rose', 109, 7.5, 'sine.inOut');
+    tl.to(w.rig, { fov: -4, duration: 7, ease: 'sine.inOut' }, 109.5); // longer lens, softer depth
     tl.to(S, { localPetals: 1, duration: 10 }, 110);
+    // crane up and round to face the box as the lid opens
+    shot('closer', 116.5, 6.5, 'sine.inOut');
+    tl.to(w.rig, { fov: 0, duration: 6, ease: 'sine.inOut' }, 116.5);
     tl.to(box, { open: 1, duration: 8, ease: 'none' }, 117);
     tl.to(w.ringMotes, { opacity: 0.45, duration: 8 }, 118);
+    // drop to eye level with the ring as it lifts out, with a breath of a dutch tilt
+    shot('rise', 123, 6.5, 'sine.inOut');
     tl.to(box, { rise: 1, duration: 8, ease: 'none' }, 123);
+    tl.to(w.rig, { roll: 0.022, fov: -2.5, duration: 6, ease: 'sine.inOut' }, 123);
     tl.to(box.sparkles, { intensity: 0.6, duration: 6 }, 125);
-    shot('ring', 129, 6);
+    // ease back up into the final frame, level again
+    shot('ring', 129.5, 5.5, 'power2.inOut');
+    tl.to(w.rig, { roll: 0, fov: 0, duration: 5, ease: 'power2.inOut' }, 129.5);
     tl.to('.letterbox', { scaleY: 0, duration: 4, ease: 'power2.inOut' }, 132);
     tl.fromTo('#proposal', { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.5 }, 133);
     tl.fromTo('.proposal__title', { autoAlpha: 0, y: 30, letterSpacing: '0.3em', filter: 'blur(14px)' }, { autoAlpha: 1, y: 0, letterSpacing: '0.08em', filter: 'blur(0px)', duration: 4, ease: 'power2.out' }, 133);

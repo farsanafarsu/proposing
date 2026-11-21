@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { createTable, createChair, createPlace, createVase, createTaperCandle, createVotive, createWineGlass, setWineLevel, petalGeometry } from './props.js';
+import { createTable, createChair, createPlace, createVase, createRose, createTaperCandle, createVotive, createWineGlass, setWineLevel, petalGeometry } from './props.js';
 import { Envelope } from './envelope.js';
 import { RingBox } from './ringBox.js';
 import { HERO } from './restaurant.js';
@@ -67,6 +67,10 @@ export function createHeroTable(mats) {
   ringBox.rotation.y = 0.0;
   root.add(ringBox);
 
+  /* a single long-stemmed rose laid beside the ring box, bloom turned towards us */
+  const rose = createLyingRose(mats);
+  root.add(rose);
+
   /* rose petals scattered over the linen */
   const petals = scatterPetals(mats, 46);
   root.add(petals);
@@ -84,10 +88,39 @@ export function createHeroTable(mats) {
     votives,
     envelope,
     ringBox,
+    rose,
     petals,
     flames: [candle.userData.flame, candle2.userData.flame, ...votives.map((v) => v.userData.flame)],
     candleTip: candle.localToWorld(candle.userData.tip.clone()),
   };
+}
+
+/**
+ * A rose lying on the linen: the head rests on its side and the stem runs
+ * back across the table, dipping just enough to touch the cloth.
+ */
+function createLyingRose(mats) {
+  const L = 0.26;
+  const scale = 0.046;
+  const inner = createRose(mats, { scale, stemLength: L, lean: new THREE.Vector3(0, 0, 0.014), leaves: 1 });
+  const head = inner.children[0];
+  head.geometry.computeBoundingSphere();
+  const headR = head.geometry.boundingSphere.radius * scale;
+  // tilt so the stem end comes down to the cloth while the head lies on its side
+  inner.rotation.z = -Math.PI / 2 + Math.asin(Math.min(0.5, (headR * 0.85) / L));
+  inner.traverse((o) => {
+    if (o.isMesh) o.castShadow = o.receiveShadow = true;
+  });
+  const g = new THREE.Group();
+  g.add(inner);
+  // stem runs back-right; the bloom faces front-left, towards the camera's approach
+  g.rotation.y = -Math.PI + Math.atan2(0.6, 0.8);
+  g.position.set(0.13, 0, 0.2);
+  // settle it so its lowest point just rests on the table
+  g.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(g);
+  g.position.y = TABLE_TOP + 0.0008 - box.min.y;
+  return g;
 }
 
 function scatterPetals(mats, n) {
@@ -97,6 +130,8 @@ function scatterPetals(mats, n) {
   const keepOut = [
     [-0.01, 0.14, 0.09], // ring box
     [0.07, 0.46, 0.13], // envelope
+    [0.2, 0.15, 0.11], // lying rose
+    [0.3, 0.07, 0.07],
     [-0.13, -0.26, 0.08],
     [0.16, -0.2, 0.06],
   ];
