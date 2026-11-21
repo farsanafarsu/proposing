@@ -483,7 +483,7 @@ export class World {
     let lit = 0;
     for (const t of this.hero.tealights) lit += Math.min(1, t.userData.flame.lit);
     const flick = 0.92 + Math.sin(time * 9.3) * 0.05 + Math.sin(time * 21.7) * 0.03;
-    this.lights.arc.intensity = ((0.9 * lit) / this.hero.tealights.length) * flick;
+    this.lights.arc.intensity = ((0.25 * lit) / this.hero.tealights.length) * flick;
     this.lights.candle.intensity = 0.4 * (0.85 + Math.sin(time * 11) * 0.08 + Math.sin(time * 23.7) * 0.07) * (1 + s.mood * 0.6);
 
     // hero objects

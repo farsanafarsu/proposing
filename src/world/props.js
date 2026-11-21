@@ -235,7 +235,7 @@ export function createVotive(mats, { lit = 1, scale = 1, flame = {} } = {}) {
   ];
   const glass = new THREE.Mesh(new THREE.LatheGeometry(profile, 48), mats.votiveGlass);
   glass.renderOrder = 3; // after the wax, before the flame and its glow
-  const light = createTealight(mats, { lit, flame: { width: 0.009, height: 0.025, halo: 0.1, haloOpacity: 0.38, ...flame } });
+  const light = createTealight(mats, { lit, flame: { width: 0.009, height: 0.025, intensity: 2.2, halo: 0.08, haloOpacity: 0.2, ...flame } });
   light.position.y = 0.0085;
   g.add(light, glass);
   g.userData.flame = light.userData.flame;

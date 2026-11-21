@@ -76,7 +76,8 @@ export function createHeroTable(mats) {
   const n = 7;
   for (let i = 0; i < n; i++) {
     const a = THREE.MathUtils.degToRad(THREE.MathUtils.lerp(30, 150, i / (n - 1)));
-    const t = createVotive(mats, { lit: 0, scale: 0.78 });
+    // small, calm flames: seven halos side by side add up quickly
+    const t = createVotive(mats, { lit: 0, scale: 0.78, flame: { intensity: 1.6, halo: 0.06, haloOpacity: 0.1 } });
     t.position.set(-0.01 + Math.cos(a) * 0.2, TABLE_TOP, 0.14 - Math.sin(a) * 0.17);
     t.userData.order = Math.abs(i - (n - 1) / 2); // centre first, then outwards
     root.add(t);
