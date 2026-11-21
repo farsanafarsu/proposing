@@ -187,11 +187,12 @@ export class Motes {
     this.points.renderOrder = 12;
   }
   set opacity(v) {
-    this.material.uniforms.uOpacity.value = v;
+    this._opacity = v;
+    this.material.uniforms.uOpacity.value = v * (this.gain ?? 1);
     this.points.visible = v > 0.001;
   }
   get opacity() {
-    return this.material.uniforms.uOpacity.value;
+    return this._opacity ?? this.material.uniforms.uOpacity.value;
   }
   update(time) {
     this.material.uniforms.uTime.value = time;
@@ -226,12 +227,13 @@ export class Sparkles extends THREE.Group {
       this.add(s);
     }
     this.intensity = 0;
+    this.gain = 1; // per-device scale (phones show sparkles hotter)
   }
   update(time) {
     for (const s of this.items) {
       const { phase, speed, size } = s.userData;
       const k = Math.pow(Math.max(0, Math.sin(time * speed + phase)), 8);
-      const v = k * this.intensity;
+      const v = k * this.intensity * this.gain;
       s.scale.setScalar(size * (0.2 + v));
       s.material.opacity = v;
       s.material.rotation += 0.002;

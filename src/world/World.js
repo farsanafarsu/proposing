@@ -21,6 +21,9 @@ export class World {
     this.canvas = canvas;
     this.isMobile = matchMedia('(pointer: coarse)').matches || Math.min(innerWidth, innerHeight) < 600;
     this.isTiny = Math.min(innerWidth, innerHeight) < 320; // smartwatches
+    // phones and tablets (iPhone, iPad, Android): no shadow from the ring box lid and small, bright
+    // screens make the ring glare — every highlight around it is scaled down by this
+    this.glare = this.isMobile ? 0.5 : 1;
     this.reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // values tweened by the story
@@ -331,6 +334,9 @@ export class World {
 
     const box = this.hero.ringBox.getWorldPosition(new THREE.Vector3());
     this.ringMotes = new Motes({ count: isMobile ? 120 : 220, center: box.clone().add(new THREE.Vector3(0, 0.25, 0)), radius: new THREE.Vector3(0.35, 0.3, 0.3), size: 6.5, opacity: 0 });
+    this.ringMotes.gain = this.glare;
+    this.hero.ringBox.sparkles.gain = this.glare;
+    if (this.isMobile) this.hero.ringBox.diamond.material.envMapIntensity *= 0.6;
     scene.add(this.ringMotes.points);
   }
 
@@ -400,7 +406,7 @@ export class World {
     L.hemi.intensity = lerp(0.35, 0.05, k);
     L.moon.intensity = lerp(0.25, 0.0, Math.max(m, c));
     L.hero.intensity = lerp(5, 1.0, k) + c * 0.4;
-    L.ring.intensity = 2.2 * m * (1 - c * 0.5); // a gentle pool of light, not a stage spot
+    L.ring.intensity = 2.2 * m * (1 - c * 0.5) * this.glare; // a gentle pool of light, not a stage spot
     L.ring.shadow.autoUpdate = m > 0.01; // no shadow pass while the ring spotlight is off
     this.mats.bulb.color.copy(this.bulbBase).multiplyScalar(lerp(1, 0.35, k));
     for (const ch of this.restaurant.chandeliers) ch.userData.halos.children.forEach((h) => (h.material.opacity = lerp(0.28, 0.1, k)));
@@ -409,7 +415,7 @@ export class World {
     this.renderer.toneMappingExposure = lerp(0.95, 0.92, k);
     this.grade.uniforms.uVignette.value = lerp(0.55, 1.05, k);
     for (const f of this.restaurant.flames) f.brightness = lerp(1, 0.45, k);
-    this.beam.material.uniforms.uOpacity.value = m * (1 - c * 0.6);
+    this.beam.material.uniforms.uOpacity.value = m * (1 - c * 0.6) * this.glare;
     this.beam.visible = m > 0.01;
   }
 
@@ -466,7 +472,7 @@ export class World {
     this.applyMood(s.mood, s.celebrate);
     this.grade.uniforms.uFade.value = s.fade;
     // ease the glow off as the room darkens so the ring reads naturally
-    this.bloom.strength = lerp(0.28, 0.4, s.door) * lerp(1, 0.6, s.mood);
+    this.bloom.strength = lerp(0.28, 0.4, s.door) * lerp(1, 0.6, s.mood) * (this.isMobile ? 0.7 : 1);
 
     for (const fn of this.updaters) fn(dt, time);
 
