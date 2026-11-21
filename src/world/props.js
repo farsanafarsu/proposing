@@ -220,23 +220,31 @@ export function createTaperCandle(mats, { height = 0.2, flame = {} } = {}) {
   return g;
 }
 
-export function createVotive(mats, { flame = {} } = {}) {
+/**
+ * A clear glass votive holder with a tea light sitting inside it.
+ * The glass is a thin, clear shell (not transmissive) so the flame and
+ * wax inside stay visible through it.
+ */
+export function createVotive(mats, { lit = 1, scale = 1, flame = {} } = {}) {
   const g = new THREE.Group();
-  const cup = new THREE.Mesh(
-    new THREE.LatheGeometry([V2(0, 0), V2(0.03, 0), V2(0.032, 0.01), V2(0.033, 0.06), V2(0.03, 0.062)], 24),
-    mats.vaseGlass
-  );
-  const light = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.018, 20), mats.wax);
-  light.position.y = 0.012;
-  const f = new Flame({ width: 0.009, height: 0.024, halo: 0.11, haloOpacity: 0.4, ...flame });
-  f.position.y = 0.022;
-  g.add(cup, light, f);
-  g.userData.flame = f;
+  // outer wall → rounded lip → inner wall → thick glass base
+  const profile = [
+    V2(0, 0), V2(0.029, 0), V2(0.0312, 0.0015), V2(0.0318, 0.008),
+    V2(0.0326, 0.066), V2(0.0324, 0.0688), V2(0.0314, 0.0694), V2(0.0303, 0.0686),
+    V2(0.0298, 0.066), V2(0.029, 0.011), V2(0.0272, 0.0085), V2(0, 0.0085),
+  ];
+  const glass = new THREE.Mesh(new THREE.LatheGeometry(profile, 48), mats.votiveGlass);
+  glass.renderOrder = 3; // after the wax, before the flame and its glow
+  const light = createTealight(mats, { lit, flame: { width: 0.009, height: 0.025, halo: 0.1, haloOpacity: 0.38, ...flame } });
+  light.position.y = 0.0085;
+  g.add(light, glass);
+  g.userData.flame = light.userData.flame;
+  g.scale.setScalar(scale);
   return g;
 }
 
 /** A small tea light in a gold cup; starts unlit (flame.lit = 0). */
-export function createTealight(mats, { lit = 0 } = {}) {
+export function createTealight(mats, { lit = 0, flame = {} } = {}) {
   const g = new THREE.Group();
   const cup = new THREE.Mesh(
     new THREE.LatheGeometry([V2(0, 0), V2(0.019, 0), V2(0.0195, 0.001), V2(0.0195, 0.014), V2(0.0185, 0.0145), V2(0.0185, 0.002), V2(0, 0.002)], 28),
@@ -248,7 +256,7 @@ export function createTealight(mats, { lit = 0 } = {}) {
   const wick = new THREE.Mesh(new THREE.CylinderGeometry(0.0006, 0.0007, 0.006, 5), mats.wick);
   wick.position.y = 0.0135;
   wick.rotation.z = 0.12;
-  const f = new Flame({ width: 0.0085, height: 0.024, intensity: 3.0, halo: 0.085, haloOpacity: 0.32 });
+  const f = new Flame({ width: 0.0085, height: 0.024, intensity: 3.0, halo: 0.085, haloOpacity: 0.32, ...flame });
   f.position.y = 0.0155;
   f.lit = lit;
   g.add(cup, wax, wick, f);

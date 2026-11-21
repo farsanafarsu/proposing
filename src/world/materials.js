@@ -159,6 +159,21 @@ export function createMaterials() {
       envMapIntensity: 1.3,
       transparent: true,
     }),
+    // clear candle-holder glass: a thin see-through shell so the flame inside shows
+    votiveGlass: new THREE.MeshPhysicalMaterial({
+      color: 0xfff6ec,
+      metalness: 0,
+      roughness: 0.04,
+      transparent: true,
+      opacity: 0.2,
+      ior: 1.5,
+      specularIntensity: 1,
+      clearcoat: 1,
+      clearcoatRoughness: 0.03,
+      envMapIntensity: 2.2,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    }),
     // opaque on purpose: transmissive glass only "sees" opaque objects behind it
     wine: new THREE.MeshPhysicalMaterial({
       color: 0x3d0510,

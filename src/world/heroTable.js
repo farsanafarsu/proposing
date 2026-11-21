@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { createTable, createChair, createPlace, createVase, createRose, createTaperCandle, createVotive, createTealight, createWineGlass, setWineLevel, petalGeometry } from './props.js';
+import { createTable, createChair, createPlace, createVase, createRose, createTaperCandle, createVotive, createWineGlass, setWineLevel, petalGeometry } from './props.js';
 import { Envelope } from './envelope.js';
 import { RingBox } from './ringBox.js';
 import { HERO } from './restaurant.js';
@@ -71,12 +71,12 @@ export function createHeroTable(mats) {
   const rose = createLyingRose(mats);
   root.add(rose);
 
-  /* an arc of tea lights behind the ring box, lit one by one at the proposal */
+  /* an arc of glass votives behind the ring box, lit one by one at the proposal */
   const tealights = [];
-  const n = 9;
+  const n = 7;
   for (let i = 0; i < n; i++) {
-    const a = THREE.MathUtils.degToRad(THREE.MathUtils.lerp(28, 152, i / (n - 1)));
-    const t = createTealight(mats);
+    const a = THREE.MathUtils.degToRad(THREE.MathUtils.lerp(30, 150, i / (n - 1)));
+    const t = createVotive(mats, { lit: 0, scale: 0.78 });
     t.position.set(-0.01 + Math.cos(a) * 0.2, TABLE_TOP, 0.14 - Math.sin(a) * 0.17);
     t.userData.order = Math.abs(i - (n - 1) / 2); // centre first, then outwards
     root.add(t);
