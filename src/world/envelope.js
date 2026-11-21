@@ -106,6 +106,16 @@ export class Envelope extends THREE.Group {
     this._up = new THREE.Vector3();
   }
 
+  /** Redraw the letter (e.g. once its script font has finished loading). */
+  refreshLetter() {
+    const old = this.letterMat.map;
+    const tex = letterTexture();
+    this.letterMat.map = tex;
+    this.letterMat.emissiveMap = tex;
+    this.letterMat.needsUpdate = true;
+    old?.dispose();
+  }
+
   setTablePose(pos, rotY = 0) {
     this.tablePos.copy(pos);
     this.tableQuat.setFromEuler(new THREE.Euler(-Math.PI / 2, rotY, 0, 'YXZ'));

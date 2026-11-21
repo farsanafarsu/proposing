@@ -44,7 +44,7 @@ function splitChars(el) {
 
 /* -------------------------------------------------------------- smooth scroll */
 // Lenis is the only smoothing layer for wheel/trackpad; touch keeps native momentum scrolling
-const lenis = new Lenis({ lerp: 0.1, wheelMultiplier: 0.9, smoothWheel: true, syncTouch: false });
+const lenis = new Lenis({ lerp: 0.12, wheelMultiplier: 1.1, smoothWheel: true, syncTouch: false });
 lenis.stop();
 lenis.on('scroll', ScrollTrigger.update);
 gsap.ticker.add((t) => lenis.raf(t * 1000));
@@ -63,6 +63,12 @@ function setLoad(p) {
 }
 
 /* -------------------------------------------------------------- boot */
+// start fetching the fonts straight away, alongside everything else
+const fontsReady = Promise.all([
+  document.fonts.load('80px "Great Vibes"'),
+  document.fonts.load('300 40px "Cormorant Garamond"'),
+  document.fonts.load('40px "Cinzel"'),
+]).catch(() => {});
 const audio = new Ambience();
 const fireworks = new Fireworks($('#fx'));
 const world = new World($('#stage'));
@@ -71,15 +77,10 @@ let story;
 
 async function boot() {
   initCursor();
-  // the letter is written in a script face — make sure it's ready before we draw it
-  try {
-    await Promise.race([
-      Promise.all([document.fonts.load('80px "Great Vibes"'), document.fonts.load('300 40px "Cormorant Garamond"'), document.fonts.load('40px "Cinzel"')]),
-      new Promise((r) => setTimeout(r, 3500)),
-    ]);
-  } catch {
-    /* fall back to system fonts */
-  }
+  // the letter is written in a script face: give it a moment, but never hold the page for it
+  let fontsIn = false;
+  fontsReady.then(() => (fontsIn = true));
+  await Promise.race([fontsReady, new Promise((r) => setTimeout(r, 900))]);
   setLoad(0.05);
 
   try {
@@ -96,26 +97,28 @@ async function boot() {
     onProposalReady: (ready) => $('#proposal').classList.toggle('is-interactive', ready && !celebrating),
   });
 
-  await new Promise((r) => setTimeout(r, 450));
+  // if the script font arrived after the letter was drawn, redraw it in the right hand
+  if (!fontsIn) fontsReady.then(() => world.hero.envelope.refreshLetter());
   revealIntro();
 }
 
 /* -------------------------------------------------------------- Scene 1 */
 const titleChars = splitChars($('.intro__title'));
 
+let introTl;
 function revealIntro() {
-  const tl = gsap.timeline();
-  tl.to('#loader', { autoAlpha: 0, duration: 1.4, ease: 'power2.inOut', onComplete: () => body.classList.remove('is-loading') })
-    .to(world.state, { fade: 0, duration: 3.2, ease: 'power2.out' }, 0.2)
+  const tl = (introTl = gsap.timeline());
+  tl.to('#loader', { autoAlpha: 0, duration: 0.7, ease: 'power2.inOut', onComplete: () => body.classList.remove('is-loading') })
+    .to(world.state, { fade: 0, duration: 2, ease: 'power2.out' }, 0.1)
     .to(world.rig.pos, { x: 0, y: 1.55, z: 7.4, duration: 9, ease: 'power2.out' }, 0)
     .to(world.rig.target, { y: 2.1, duration: 9, ease: 'power2.out' }, 0)
-    .set('#intro', { autoAlpha: 1 }, 1.2)
-    .from('#intro .eyebrow', { autoAlpha: 0, y: 14, duration: 1.4, ease: 'power3.out' }, 1.4)
-    .from(titleChars, { autoAlpha: 0, yPercent: 60, rotateX: -70, filter: 'blur(8px)', duration: 1.4, stagger: 0.035, ease: 'power3.out' }, 1.6)
-    .from('.intro__sub', { autoAlpha: 0, y: 16, duration: 1.4, ease: 'power3.out' }, 2.8)
-    .from('#enter', { autoAlpha: 0, y: 18, scale: 0.94, duration: 1.4, ease: 'power3.out' }, 3.3)
-    .from('.intro__cue', { autoAlpha: 0, duration: 1.2 }, 4)
-    .add(() => (introReady = true), 3.4);
+    .set('#intro', { autoAlpha: 1 }, 0.4)
+    .from('#intro .eyebrow', { autoAlpha: 0, y: 14, duration: 1, ease: 'power3.out' }, 0.5)
+    .from(titleChars, { autoAlpha: 0, yPercent: 60, rotateX: -70, filter: 'blur(8px)', duration: 1, stagger: 0.025, ease: 'power3.out' }, 0.6)
+    .from('.intro__sub', { autoAlpha: 0, y: 16, duration: 1, ease: 'power3.out' }, 1.3)
+    .from('#enter', { autoAlpha: 0, y: 18, scale: 0.94, duration: 1, ease: 'power3.out' }, 1.5)
+    .from('.intro__cue', { autoAlpha: 0, duration: 0.8 }, 1.9)
+    .add(() => (introReady = true), 1.2); // can enter while the last words are still settling
 }
 
 /* Enter by tapping the button — or simply by scrolling / swiping / pressing a key */
@@ -137,6 +140,7 @@ function enterStory() {
   audio.start();
   // stop the slow intro drift so it doesn't fight the entrance glide
   gsap.killTweensOf([world.rig.pos, world.rig.target]);
+  introTl.progress(1); // finish the intro instantly if someone enters while it is still playing
   const [p0, t0] = SHOTS.doorway;
 
   // one continuous glide: steps → through the doorway → into the room (no stop in between)
@@ -162,28 +166,28 @@ function enterStory() {
     .to(['#intro .eyebrow', '.intro__sub', '#enter', '.intro__cue'], { autoAlpha: 0, y: -12, duration: 0.8, ease: 'power2.in' }, 0.1)
     .set('#intro', { autoAlpha: 0 }, 1.2)
     // the doors swing open, golden light floods out, a gust of petals blows towards us
-    .to(world.state, { door: 1, duration: 3.0, ease: 'none' }, 0.4)
-    .add(() => world.entrancePetals.burst(new THREE.Vector3(0, 4.3, 0.5), world.isMobile ? 50 : 90, 0.7, { x: 0, z: 1 }), 0.9)
+    .to(world.state, { door: 1, duration: 2.2, ease: 'none' }, 0.3)
+    .add(() => world.entrancePetals.burst(new THREE.Vector3(0, 4.3, 0.5), world.isMobile ? 50 : 90, 0.7, { x: 0, z: 1 }), 0.7)
     .to(
       glide,
       {
         t: 1,
-        duration: 5.2,
+        duration: 3.8,
         ease: 'power2.inOut',
         onUpdate: () => {
           path.getPoint(glide.t, world.rig.pos);
           look.getPoint(glide.t, world.rig.target);
         },
       },
-      0.6
+      0.4
     )
     // the outside shower stops once we're indoors (saves work)
-    .to(world.state, { entrancePetals: 0, duration: 1 }, 4.8)
+    .to(world.state, { entrancePetals: 0, duration: 1 }, 3.3)
     .add(() => {
       // freeze door shadows once we're inside — saves a shadow pass per frame
       world.lights.door.shadow.autoUpdate = false;
       world.lights.door.shadow.needsUpdate = true;
-    }, 5.6);
+    }, 4.1);
 }
 
 /* -------------------------------------------------------------- sound */
