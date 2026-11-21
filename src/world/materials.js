@@ -190,7 +190,10 @@ export function createMaterials() {
     wick: new THREE.MeshBasicMaterial({ color: 0x1a0d08 }),
     rose: new THREE.MeshPhysicalMaterial({
       map: petalTexture(),
-      roughness: 0.62,
+      vertexColors: true, // shading towards the heart of the bloom
+      emissive: new THREE.Color(0x3a0310), // a hint of light passing through the petals
+      emissiveIntensity: 0.18,
+      roughness: 0.58,
       sheen: 1,
       sheenRoughness: 0.35,
       sheenColor: new THREE.Color(0xff4d6a),
@@ -207,8 +210,9 @@ export function createMaterials() {
       sheenColor: new THREE.Color(0xff5a74),
       side: THREE.DoubleSide,
     }),
-    leaf: new THREE.MeshStandardMaterial({ color: 0x0f2412, roughness: 0.55, side: THREE.DoubleSide }),
-    stem: new THREE.MeshStandardMaterial({ color: 0x1b3317, roughness: 0.7 }),
+    leaf: new THREE.MeshPhysicalMaterial({ color: 0x173a19, roughness: 0.42, sheen: 0.5, sheenColor: new THREE.Color(0x6f9a52), clearcoat: 0.25, clearcoatRoughness: 0.5, side: THREE.DoubleSide }),
+    stem: new THREE.MeshPhysicalMaterial({ color: 0x24431c, roughness: 0.5, clearcoat: 0.2 }),
+    thorn: new THREE.MeshStandardMaterial({ color: 0x5a2a1a, roughness: 0.6 }),
     bulb: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.0, 0.75, 0.42).multiplyScalar(1.6) }),
     crystal: new THREE.MeshPhysicalMaterial({
       color: 0xffffff,

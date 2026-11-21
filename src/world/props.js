@@ -76,24 +76,40 @@ export function petalGeometry({ w = 0.9, l = 1, segU = 6, segV = 8, cup = 0.5, c
 let roseCache;
 function roseGeometries() {
   if (roseCache) return roseCache;
+  // seeded jitter so every petal is a little different, but the rose is the same on every load
+  let seed = 7;
+  const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647 - 0.5;
   const petals = [];
-  const N = 24;
+  const N = 30;
   const golden = Math.PI * (3 - Math.sqrt(5));
   for (let i = 0; i < N; i++) {
     const t = i / (N - 1);
-    const size = THREE.MathUtils.lerp(0.34, 1.0, Math.pow(t, 0.7));
-    const open = THREE.MathUtils.lerp(0.04, 1.15, Math.pow(t, 1.5));
+    const size = THREE.MathUtils.lerp(0.32, 1.02, Math.pow(t, 0.7)) * (1 + rand() * 0.14);
+    const open = THREE.MathUtils.lerp(0.03, 1.22, Math.pow(t, 1.45)) + rand() * 0.12 * t;
     const g = petalGeometry({
-      w: 0.95 * size,
+      w: (0.92 + rand() * 0.12) * size,
       l: size,
       segU: 6,
       segV: 7,
-      cup: THREE.MathUtils.lerp(0.95, 0.35, t),
-      curl: THREE.MathUtils.lerp(0.0, 0.5, Math.pow(t, 1.2)),
+      cup: THREE.MathUtils.lerp(0.98, 0.3, t),
+      // outer petals roll their edges back the way real ones do
+      curl: THREE.MathUtils.lerp(0.0, 0.78, Math.pow(t, 1.3)) + rand() * 0.1 * t,
     });
+    g.rotateZ(rand() * 0.22 * t); // a slight asymmetric lean
     g.rotateX(-open);
     g.translate(0, THREE.MathUtils.lerp(0.06, -0.08, t), -THREE.MathUtils.lerp(0.03, 0.16, t));
-    g.rotateY(i * golden);
+    g.rotateY(i * golden + rand() * 0.35);
+    // shade the heart of the bloom: inner petals and petal bases sit in shadow
+    const uv = g.attributes.uv;
+    const col = new Float32Array(uv.count * 3);
+    for (let k = 0; k < uv.count; k++) {
+      const v = uv.getY(k);
+      const d = THREE.MathUtils.lerp(0.42, 1.0, Math.pow(t, 0.8)) * THREE.MathUtils.lerp(0.55, 1.0, Math.pow(v, 0.6));
+      col[k * 3] = d;
+      col[k * 3 + 1] = d * 0.92;
+      col[k * 3 + 2] = d * 0.94;
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     petals.push(g);
   }
   const head = mergeGeometries(petals);
@@ -101,17 +117,31 @@ function roseGeometries() {
 
   const sepals = [];
   for (let i = 0; i < 5; i++) {
-    const g = petalGeometry({ w: 0.22, l: 0.55, segU: 2, segV: 4, cup: 0.2, curl: -0.25 });
-    g.rotateX(Math.PI - 0.7);
+    const g = petalGeometry({ w: 0.2, l: 0.6, segU: 2, segV: 5, cup: 0.2, curl: -0.4 });
+    g.rotateX(Math.PI - 0.6);
     g.translate(0, -0.22, -0.05);
-    g.rotateY((i / 5) * Math.PI * 2);
+    g.rotateY((i / 5) * Math.PI * 2 + 0.3);
     sepals.push(g);
   }
   const sepal = mergeGeometries(sepals);
-  const leaf = petalGeometry({ w: 0.55, l: 1, segU: 3, segV: 5, cup: 0.25, curl: 0.15 });
+  // serrated leaf with a crease down the midrib
+  const leaf = petalGeometry({ w: 0.55, l: 1, segU: 4, segV: 14, cup: 0.25, curl: 0.15 });
+  {
+    const p = leaf.attributes.position;
+    const cols = 5;
+    for (let k = 0; k < p.count; k++) {
+      const c = k % cols;
+      const row = Math.floor(k / cols) / 14;
+      if (c === 0 || c === cols - 1) p.setX(k, p.getX(k) * (1 + ((row * 11) % 1) * 0.16));
+      if (c === 2) p.setZ(k, p.getZ(k) - 0.03);
+    }
+    leaf.computeVertexNormals();
+  }
   roseCache = { head, sepal, leaf };
   return roseCache;
 }
+
+const thornGeo = new THREE.ConeGeometry(0.0016, 0.007, 5).translate(0, 0.0035, 0);
 
 /**
  * A single long-stemmed rose. Head sits at the origin; the stem hangs down
@@ -132,8 +162,15 @@ export function createRose(mats, { scale = 0.055, stemLength = 0.3, lean = new T
       new THREE.Vector3(lean.x * 0.4, -stemLength * 0.5, lean.z * 0.4),
       new THREE.Vector3(lean.x, -stemLength, lean.z),
     ]);
-    const stem = new THREE.Mesh(new THREE.TubeGeometry(curve, 12, 0.0035, 5), mats.stem);
+    const stem = new THREE.Mesh(new THREE.TubeGeometry(curve, 16, 0.0035, 6), mats.stem);
     g.add(stem);
+    // a few small thorns
+    for (let i = 0; i < 3; i++) {
+      const thorn = new THREE.Mesh(thornGeo, mats.thorn);
+      thorn.position.copy(curve.getPoint(0.22 + i * 0.24));
+      thorn.rotation.set(0, i * 2.2, Math.PI / 2 - 0.5);
+      g.add(thorn);
+    }
     for (let i = 0; i < leaves; i++) {
       const lf = new THREE.Mesh(leaf, mats.leaf);
       const t = 0.3 + i * 0.25;
@@ -194,6 +231,27 @@ export function createVotive(mats, { flame = {} } = {}) {
   const f = new Flame({ width: 0.009, height: 0.024, halo: 0.11, haloOpacity: 0.4, ...flame });
   f.position.y = 0.022;
   g.add(cup, light, f);
+  g.userData.flame = f;
+  return g;
+}
+
+/** A small tea light in a gold cup; starts unlit (flame.lit = 0). */
+export function createTealight(mats, { lit = 0 } = {}) {
+  const g = new THREE.Group();
+  const cup = new THREE.Mesh(
+    new THREE.LatheGeometry([V2(0, 0), V2(0.019, 0), V2(0.0195, 0.001), V2(0.0195, 0.014), V2(0.0185, 0.0145), V2(0.0185, 0.002), V2(0, 0.002)], 28),
+    mats.goldSatin
+  );
+  cup.castShadow = true;
+  // a slightly melted, concave pool of wax
+  const wax = new THREE.Mesh(new THREE.LatheGeometry([V2(0, 0.0105), V2(0.012, 0.0112), V2(0.0184, 0.0128), V2(0.0184, 0.002), V2(0, 0.002)], 28), mats.wax);
+  const wick = new THREE.Mesh(new THREE.CylinderGeometry(0.0006, 0.0007, 0.006, 5), mats.wick);
+  wick.position.y = 0.0135;
+  wick.rotation.z = 0.12;
+  const f = new Flame({ width: 0.0085, height: 0.024, intensity: 3.0, halo: 0.085, haloOpacity: 0.32 });
+  f.position.y = 0.0155;
+  f.lit = lit;
+  g.add(cup, wax, wick, f);
   g.userData.flame = f;
   return g;
 }

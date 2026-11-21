@@ -100,6 +100,8 @@ export class Flame extends THREE.Group {
     this.baseHalo = haloOpacity;
     this.haloSize = halo;
     this.brightness = 1;
+    this.lit = 1; // 0 = unlit, 1 = burning; above 1 it flares briefly while catching
+    this.size = new THREE.Vector2(width, height);
     this._wp = new THREE.Vector3();
   }
 
@@ -107,9 +109,13 @@ export class Flame extends THREE.Group {
     const u = this.material.uniforms;
     u.uTime.value = time;
     const flicker = 0.9 + Math.sin(time * 9 + u.uSeed.value) * 0.05 + Math.sin(time * 23.0 + u.uSeed.value * 3) * 0.05;
-    u.uIntensity.value = this.baseIntensity * flicker * this.brightness;
-    this.halo.material.opacity = this.baseHalo * flicker * this.brightness;
-    this.halo.scale.setScalar(this.haloSize * (0.96 + flicker * 0.06));
+    const lit = Math.max(0, this.lit);
+    this.visible = lit > 0.01;
+    if (!this.visible) return;
+    this.flame.scale.set(this.size.x * (0.45 + 0.55 * Math.min(lit, 1.3)), this.size.y * lit, 1);
+    u.uIntensity.value = this.baseIntensity * flicker * this.brightness * Math.min(lit, 1);
+    this.halo.material.opacity = this.baseHalo * flicker * this.brightness * Math.min(lit, 1.2);
+    this.halo.scale.setScalar(this.haloSize * (0.96 + flicker * 0.06) * (0.6 + 0.4 * lit));
     // cylindrical billboard: rotate around Y towards the camera
     this.getWorldPosition(this._wp);
     this.flame.rotation.y = Math.atan2(camera.position.x - this._wp.x, camera.position.z - this._wp.z);

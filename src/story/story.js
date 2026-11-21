@@ -130,6 +130,10 @@ export class Story {
     shot('closer', 116.5, 6.5, 'sine.inOut');
     tl.to(w.rig, { fov: 0, duration: 6, ease: 'sine.inOut' }, 116.5);
     tl.to(box, { open: 1, duration: 8, ease: 'none' }, 117);
+    // the tea lights catch one after another, centre first, each with a small flare
+    for (const t of h.tealights) {
+      tl.fromTo(t.userData.flame, { lit: 0 }, { lit: 1, duration: 1.6, ease: 'back.out(2.6)' }, 113.5 + t.userData.order * 1.1);
+    }
     tl.to(w.ringMotes, { opacity: 0.45, duration: 8 }, 118);
     // drop to eye level with the ring as it lifts out, with a breath of a dutch tilt
     shot('rise', 123, 6.5, 'sine.inOut');

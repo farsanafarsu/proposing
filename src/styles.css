@@ -669,10 +669,11 @@ body.is-entered .sound {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 0 var(--gutter);
+  /* the words sit in the upper part of the frame so the ring stays clear below */
+  justify-content: flex-start;
+  padding: clamp(28px, 11vh, 140px) var(--gutter) 0;
   text-align: center;
-  background: radial-gradient(ellipse at center, rgba(22, 6, 9, 0.15) 0%, rgba(22, 6, 9, 0.7) 70%);
+  background: linear-gradient(180deg, rgba(22, 6, 9, 0.72) 0%, rgba(22, 6, 9, 0.35) 38%, rgba(22, 6, 9, 0) 60%, rgba(22, 6, 9, 0.45) 100%);
   opacity: 0;
   visibility: hidden;
 }

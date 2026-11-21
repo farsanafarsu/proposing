@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { createTable, createChair, createPlace, createVase, createRose, createTaperCandle, createVotive, createWineGlass, setWineLevel, petalGeometry } from './props.js';
+import { createTable, createChair, createPlace, createVase, createRose, createTaperCandle, createVotive, createTealight, createWineGlass, setWineLevel, petalGeometry } from './props.js';
 import { Envelope } from './envelope.js';
 import { RingBox } from './ringBox.js';
 import { HERO } from './restaurant.js';
@@ -71,6 +71,18 @@ export function createHeroTable(mats) {
   const rose = createLyingRose(mats);
   root.add(rose);
 
+  /* an arc of tea lights behind the ring box, lit one by one at the proposal */
+  const tealights = [];
+  const n = 9;
+  for (let i = 0; i < n; i++) {
+    const a = THREE.MathUtils.degToRad(THREE.MathUtils.lerp(28, 152, i / (n - 1)));
+    const t = createTealight(mats);
+    t.position.set(-0.01 + Math.cos(a) * 0.2, TABLE_TOP, 0.14 - Math.sin(a) * 0.17);
+    t.userData.order = Math.abs(i - (n - 1) / 2); // centre first, then outwards
+    root.add(t);
+    tealights.push(t);
+  }
+
   /* rose petals scattered over the linen */
   const petals = scatterPetals(mats, 46);
   root.add(petals);
@@ -89,8 +101,9 @@ export function createHeroTable(mats) {
     envelope,
     ringBox,
     rose,
+    tealights,
     petals,
-    flames: [candle.userData.flame, candle2.userData.flame, ...votives.map((v) => v.userData.flame)],
+    flames: [candle.userData.flame, candle2.userData.flame, ...votives.map((v) => v.userData.flame), ...tealights.map((t) => t.userData.flame)],
     candleTip: candle.localToWorld(candle.userData.tip.clone()),
   };
 }
@@ -130,6 +143,7 @@ function scatterPetals(mats, n) {
   const keepOut = [
     [-0.01, 0.14, 0.09], // ring box
     [0.07, 0.46, 0.13], // envelope
+    [-0.01, -0.01, 0.2], // tea light arc
     [0.2, 0.15, 0.11], // lying rose
     [0.3, 0.07, 0.07],
     [-0.13, -0.26, 0.08],

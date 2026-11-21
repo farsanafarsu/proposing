@@ -245,6 +245,11 @@ export class World {
     L.candle.position.copy(this.hero.candleTip);
     scene.add(L.candle);
 
+    // the warm glow of the tea lights behind the ring box
+    L.arc = new THREE.PointLight(0xff9a4a, 0, 1.2, 2);
+    L.arc.position.copy(this.hero.ringBox.getWorldPosition(new THREE.Vector3())).add(new THREE.Vector3(0, 0.05, -0.1));
+    scene.add(L.arc);
+
     // narrow spotlight for the ring box reveal
     const box = this.hero.ringBox.getWorldPosition(new THREE.Vector3());
     L.ring = new THREE.SpotLight(0xfff0dc, 0, 5, 0.085, 1, 2);
@@ -394,14 +399,14 @@ export class World {
     L.chand.forEach((p, i) => (p.intensity = (i === 3 ? 8 : 20) * lerp(1, 0.1, k)));
     L.hemi.intensity = lerp(0.35, 0.05, k);
     L.moon.intensity = lerp(0.25, 0.0, Math.max(m, c));
-    L.hero.intensity = lerp(9, 1.2, k) + c * 3;
-    L.ring.intensity = 2.2 * m; // a gentle pool of light, not a stage spot
+    L.hero.intensity = lerp(9, 1.2, k) + c * 1.2;
+    L.ring.intensity = 2.2 * m * (1 - c * 0.35); // a gentle pool of light, not a stage spot
     L.ring.shadow.autoUpdate = m > 0.01; // no shadow pass while the ring spotlight is off
     this.mats.bulb.color.copy(this.bulbBase).multiplyScalar(lerp(1, 0.35, k));
     for (const ch of this.restaurant.chandeliers) ch.userData.halos.children.forEach((h) => (h.material.opacity = lerp(0.28, 0.1, k)));
     this.scene.environmentIntensity = lerp(0.55, 0.3, k);
     this.scene.fog.density = lerp(0.03, 0.11, k);
-    this.renderer.toneMappingExposure = lerp(1.05, 1.0, k) + c * 0.08;
+    this.renderer.toneMappingExposure = lerp(1.05, 1.0, k) + c * 0.03;
     this.grade.uniforms.uVignette.value = lerp(0.55, 1.05, k);
     for (const f of this.restaurant.flames) f.brightness = lerp(1, 0.45, k);
     this.beam.material.uniforms.uOpacity.value = m * (1 - c * 0.6);
@@ -469,6 +474,10 @@ export class World {
     const cam = this.camera;
     for (const f of this.restaurant.flames) f.update(time, cam);
     for (const f of this.hero.flames) f.update(time, cam);
+    let lit = 0;
+    for (const t of this.hero.tealights) lit += Math.min(1, t.userData.flame.lit);
+    const flick = 0.92 + Math.sin(time * 9.3) * 0.05 + Math.sin(time * 21.7) * 0.03;
+    this.lights.arc.intensity = ((0.9 * lit) / this.hero.tealights.length) * flick;
     this.lights.candle.intensity = 0.4 * (0.85 + Math.sin(time * 11) * 0.08 + Math.sin(time * 23.7) * 0.07) * (1 + s.mood * 0.6);
 
     // hero objects
