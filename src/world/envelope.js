@@ -126,7 +126,7 @@ export class Envelope extends THREE.Group {
   /** Distance in front of the camera at which the open letter fills the view. */
   presentDistance(camera) {
     const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
-    const fill = 0.7; // leave room for the cinematic bars at the top and bottom
+    const fill = 0.88; // the open letter fills most of the screen
     const dV = (LH * 2) / (fill * 2 * tanV);
     const dH = LW / (fill * 2 * tanV * camera.aspect);
     return Math.max(dV, dH);

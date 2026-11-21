@@ -127,7 +127,10 @@ let entered = false;
 const cue = $('.intro__cue');
 if (matchMedia('(pointer: coarse)').matches) cue.textContent = 'or swipe up to begin';
 
-$('#enter').addEventListener('click', enterStory);
+$('#enter').addEventListener('click', () => {
+  if (introReady && !entered) goFullscreen();
+  enterStory();
+});
 window.addEventListener('wheel', (e) => e.deltaY > 8 && enterStory(), { passive: true });
 let touchY = null;
 window.addEventListener('touchstart', (e) => (touchY = e.touches[0].clientY), { passive: true });
@@ -188,6 +191,36 @@ function enterStory() {
       world.lights.door.shadow.autoUpdate = false;
       world.lights.door.shadow.needsUpdate = true;
     }, 4.1);
+}
+
+/* -------------------------------------------------------------- full screen */
+const fsBtn = $('#fullscreen');
+const root = document.documentElement;
+const fsSupported = !!(root.requestFullscreen || root.webkitRequestFullscreen);
+const isFull = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+function goFullscreen() {
+  if (!fsSupported || isFull()) return;
+  try {
+    const r = (root.requestFullscreen || root.webkitRequestFullscreen).call(root, { navigationUI: 'hide' });
+    r?.catch?.(() => {}); // refused (e.g. not triggered by a tap or click) — just stay windowed
+  } catch {
+    /* not allowed here */
+  }
+}
+if (fsSupported) {
+  fsBtn.hidden = false;
+  fsBtn.addEventListener('click', () => {
+    if (isFull()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    else goFullscreen();
+  });
+  const syncFs = () => {
+    const on = isFull();
+    fsBtn.classList.toggle('is-on', on);
+    fsBtn.setAttribute('aria-pressed', String(on));
+    fsBtn.setAttribute('aria-label', on ? 'Exit full screen' : 'Enter full screen');
+  };
+  document.addEventListener('fullscreenchange', syncFs);
+  document.addEventListener('webkitfullscreenchange', syncFs);
 }
 
 /* -------------------------------------------------------------- sound */

@@ -89,7 +89,6 @@ export class Story {
 
     /* Scene 3 — the candlelight dinner */
     shot('dinner', 25, 6);
-    tl.fromTo('.letterbox', { scaleY: 0 }, { scaleY: 1, duration: 4, ease: 'power2.inOut' }, 26);
     caption(cap('m1'), 29, 35);
     shot('glasses', 37, 7);
     tl.to(S, { wine: 1, duration: 8, ease: 'power1.inOut' }, 38);
@@ -143,7 +142,6 @@ export class Story {
     // ease back up into the final frame, level again
     shot('ring', 129.5, 5.5, 'power2.inOut');
     tl.to(w.rig, { roll: 0, fov: 0, duration: 5, ease: 'power2.inOut' }, 129.5);
-    tl.to('.letterbox', { scaleY: 0, duration: 4, ease: 'power2.inOut' }, 132);
     tl.fromTo('#proposal', { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.5 }, 133);
     tl.fromTo('.proposal__title', { autoAlpha: 0, y: 30, letterSpacing: '0.3em', filter: 'blur(14px)' }, { autoAlpha: 1, y: 0, letterSpacing: '0.08em', filter: 'blur(0px)', duration: 4, ease: 'power2.out' }, 133);
     tl.fromTo('.proposal__sub', { autoAlpha: 0, y: 20 }, { autoAlpha: 1, y: 0, duration: 3, ease: 'power2.out' }, 135.5);

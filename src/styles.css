@@ -243,6 +243,29 @@ body.is-entered .sound {
   opacity: 1;
   pointer-events: auto;
 }
+/* full-screen toggle sits just above the sound button */
+.fullscreen {
+  bottom: calc(var(--gutter) + 52px + env(safe-area-inset-bottom, 0px));
+  color: var(--gold);
+}
+.fullscreen[hidden] {
+  display: none;
+}
+.fullscreen__icon {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+.fullscreen__out,
+.fullscreen.is-on .fullscreen__in {
+  display: none;
+}
+.fullscreen.is-on .fullscreen__out {
+  display: inline;
+}
 .sound:focus-visible {
   border-color: var(--gold);
   outline: none;
