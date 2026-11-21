@@ -97,9 +97,9 @@ export class Story {
     /* Scene 4 — the love letter */
     shot('letter', 61, 5);
     tl.to(env, { lift: 1, duration: 6, ease: 'power1.inOut' }, 66);
-    tl.to(env, { flapT: 1, duration: 3, ease: 'power2.inOut' }, 71);
-    tl.to(env, { slide: 1, duration: 5, ease: 'power1.inOut' }, 73);
-    tl.to(env, { present: 1, duration: 4, ease: 'power1.inOut' }, 78);
+    tl.to(env, { flapT: 1, duration: 2.5, ease: 'power2.inOut' }, 70.5); // fully open and tucked back before the letter moves
+    tl.to(env, { slide: 1, duration: 5, ease: 'power1.inOut' }, 73.5);
+    tl.to(env, { present: 1, duration: 4, ease: 'power1.inOut' }, 78.5);
     tl.to(w.letterMotes, { opacity: 1, duration: 5 }, 78);
     tl.to(env, { glow: 1, duration: 5 }, 79);
     tl.to(env, { unfold: 1, duration: 5, ease: 'power2.inOut' }, 80.5);
