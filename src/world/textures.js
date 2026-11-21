@@ -251,17 +251,22 @@ export function letterTexture() {
   g.textAlign = 'left';
   g.textBaseline = 'alphabetic';
 
-  g.font = '92px "Great Vibes", "Snell Roundhand", cursive';
-  g.fillText('My love,', 130, 260);
+  // the letter is folded across the middle: keep every line clear of the crease
+  const fold = H / 2;
+  const clearFold = (y, size) => (y > fold - 40 && y - size < fold + 40 ? fold + size + 70 : y);
+
+  g.font = '96px "Great Vibes", "Snell Roundhand", cursive';
+  g.fillText('My love,', 130, 250);
 
   const body =
     'From the moment you came into my life, everything started feeling a little more beautiful.';
-  g.font = '80px "Great Vibes", "Snell Roundhand", cursive';
-  const lines = wrap(g, body, W - 260);
-  let y = 440;
+  g.font = '78px "Great Vibes", "Snell Roundhand", cursive';
+  const lines = wrap(g, body, W - 270);
+  let y = 410;
   for (const line of lines) {
+    y = clearFold(y, 78);
     g.fillText(line, 130, y);
-    y += 112;
+    y += 118;
   }
 
   g.textAlign = 'right';

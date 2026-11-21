@@ -82,7 +82,10 @@ export class Envelope extends THREE.Group {
     this.letterRest = new THREE.Vector3(0, -EH / 2 + 0.007, 0.0018);
     this.letter.position.copy(this.letterRest);
 
-    this.body.add(back, liner, this.letter, pocket, this.flap);
+    // everything but the letter, so the envelope can drop away while the letter is read
+    this.shell = new THREE.Group();
+    this.shell.add(back, liner, pocket, this.flap);
+    this.body.add(this.shell, this.letter);
     this.traverse((o) => {
       if (o.isMesh) o.castShadow = true;
     });
@@ -113,7 +116,7 @@ export class Envelope extends THREE.Group {
   /** Distance in front of the camera at which the open letter fills the view. */
   presentDistance(camera) {
     const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
-    const fill = 0.82;
+    const fill = 0.7; // leave room for the cinematic bars at the top and bottom
     const dV = (LH * 2) / (fill * 2 * tanV);
     const dH = LW / (fill * 2 * tanV * camera.aspect);
     return Math.max(dV, dH);
@@ -137,7 +140,10 @@ export class Envelope extends THREE.Group {
     this.position.y += Math.sin(Math.PI * e) * 0.06; // graceful arc
     this.quaternion.slerpQuaternions(this.tableQuat, camera.quaternion, smooth(e));
 
-    this.flap.rotation.x = -Math.PI * 0.94 * smooth(this.flapT);
+    // the flap folds back past flat and tucks behind the envelope, so it never covers the letter
+    const f = smooth(this.flapT);
+    this.flap.rotation.x = -Math.PI * 1.04 * f;
+    this.flap.position.z = THREE.MathUtils.lerp(0.0048, -0.0012, smooth((f - 0.35) / 0.4));
 
     const s = smooth(this.slide);
     const p = smooth(this.present);
@@ -148,6 +154,9 @@ export class Envelope extends THREE.Group {
       THREE.MathUtils.lerp(this.letterRest.z, zF, p)
     );
     this.letter.rotation.x = Math.sin(Math.PI * p) * -0.12;
+    // once the letter is out, the envelope sinks away below it
+    this.shell.position.set(0, -0.22 * p, -0.03 * p);
+    this.shell.visible = p < 0.98;
     this.lower.rotation.x = -Math.PI * (1 - smooth(this.unfold));
     this.letterMat.emissiveIntensity = 0.22 * this.glow;
   }

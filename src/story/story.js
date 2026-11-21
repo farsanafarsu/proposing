@@ -102,7 +102,7 @@ export class Story {
     tl.to(env, { present: 1, duration: 4, ease: 'power1.inOut' }, 78);
     tl.to(w.letterMotes, { opacity: 1, duration: 5 }, 78);
     tl.to(env, { glow: 1, duration: 5 }, 79);
-    tl.to(env, { unfold: 1, duration: 6, ease: 'power2.inOut' }, 82);
+    tl.to(env, { unfold: 1, duration: 5, ease: 'power2.inOut' }, 80.5);
     caption(cap('letter'), 84, 95); // only displayed on watch-sized screens (CSS)
     tl.to(this.fx, { candle: 1, duration: 4 }, 84);
     tl.to(w.rig, { fov: -2, duration: 9, ease: 'sine.inOut' }, 88);
