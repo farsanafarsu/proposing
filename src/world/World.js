@@ -21,9 +21,9 @@ export class World {
     this.canvas = canvas;
     this.isMobile = matchMedia('(pointer: coarse)').matches || Math.min(innerWidth, innerHeight) < 600;
     this.isTiny = Math.min(innerWidth, innerHeight) < 320; // smartwatches
-    // phones and tablets (iPhone, iPad, Android): no shadow from the ring box lid and small, bright
-    // screens make the ring glare — every highlight around it is scaled down by this
-    this.glare = this.isMobile ? 0.5 : 1;
+    // every highlight around the ring is scaled by this: soft and natural on every screen
+    // (phones go lower still — no shadow from the box lid there, and small, bright screens)
+    this.glare = this.isMobile ? 0.4 : 0.5;
     this.reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // values tweened by the story
@@ -73,7 +73,7 @@ export class World {
     renderer.setPixelRatio(this.pixelRatio);
     renderer.setSize(innerWidth, innerHeight, false);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.95;
+    renderer.toneMappingExposure = 0.9;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -336,7 +336,7 @@ export class World {
     this.ringMotes = new Motes({ count: isMobile ? 120 : 220, center: box.clone().add(new THREE.Vector3(0, 0.25, 0)), radius: new THREE.Vector3(0.35, 0.3, 0.3), size: 6.5, opacity: 0 });
     this.ringMotes.gain = this.glare;
     this.hero.ringBox.sparkles.gain = this.glare;
-    if (this.isMobile) this.hero.ringBox.diamond.material.envMapIntensity *= 0.6;
+    this.hero.ringBox.diamond.material.envMapIntensity *= this.isMobile ? 0.55 : 0.7;
     scene.add(this.ringMotes.points);
   }
 
@@ -412,7 +412,7 @@ export class World {
     for (const ch of this.restaurant.chandeliers) ch.userData.halos.children.forEach((h) => (h.material.opacity = lerp(0.28, 0.1, k)));
     this.scene.environmentIntensity = lerp(0.55, 0.3, k);
     this.scene.fog.density = lerp(0.03, 0.11, k);
-    this.renderer.toneMappingExposure = lerp(0.95, 0.92, k);
+    this.renderer.toneMappingExposure = lerp(0.9, 0.88, k);
     this.grade.uniforms.uVignette.value = lerp(0.55, 1.05, k);
     for (const f of this.restaurant.flames) f.brightness = lerp(1, 0.45, k);
     this.beam.material.uniforms.uOpacity.value = m * (1 - c * 0.6) * this.glare;
@@ -472,7 +472,7 @@ export class World {
     this.applyMood(s.mood, s.celebrate);
     this.grade.uniforms.uFade.value = s.fade;
     // ease the glow off as the room darkens so the ring reads naturally
-    this.bloom.strength = lerp(0.28, 0.4, s.door) * lerp(1, 0.6, s.mood) * (this.isMobile ? 0.7 : 1);
+    this.bloom.strength = lerp(0.28, 0.4, s.door) * lerp(1, 0.6, s.mood) * 0.7;
 
     for (const fn of this.updaters) fn(dt, time);
 
