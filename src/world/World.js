@@ -395,18 +395,18 @@ export class World {
   applyMood(m, celebrate) {
     const L = this.lights;
     const c = celebrate;
-    const k = lerp(m, m * 0.35, c); // celebration lifts the darkness again
+    const k = lerp(m, m * 0.72, c); // celebration lifts the darkness only a little: stays candlelit
     L.chand.forEach((p, i) => (p.intensity = (i === 3 ? 8 : 20) * lerp(1, 0.1, k)));
     L.hemi.intensity = lerp(0.35, 0.05, k);
     L.moon.intensity = lerp(0.25, 0.0, Math.max(m, c));
-    L.hero.intensity = lerp(9, 1.2, k) + c * 1.2;
-    L.ring.intensity = 2.2 * m * (1 - c * 0.35); // a gentle pool of light, not a stage spot
+    L.hero.intensity = lerp(9, 1.2, k) + c * 0.5;
+    L.ring.intensity = 2.2 * m * (1 - c * 0.5); // a gentle pool of light, not a stage spot
     L.ring.shadow.autoUpdate = m > 0.01; // no shadow pass while the ring spotlight is off
     this.mats.bulb.color.copy(this.bulbBase).multiplyScalar(lerp(1, 0.35, k));
     for (const ch of this.restaurant.chandeliers) ch.userData.halos.children.forEach((h) => (h.material.opacity = lerp(0.28, 0.1, k)));
     this.scene.environmentIntensity = lerp(0.55, 0.3, k);
     this.scene.fog.density = lerp(0.03, 0.11, k);
-    this.renderer.toneMappingExposure = lerp(1.05, 1.0, k) + c * 0.03;
+    this.renderer.toneMappingExposure = lerp(1.05, 1.0, k);
     this.grade.uniforms.uVignette.value = lerp(0.55, 1.05, k);
     for (const f of this.restaurant.flames) f.brightness = lerp(1, 0.45, k);
     this.beam.material.uniforms.uOpacity.value = m * (1 - c * 0.6);
